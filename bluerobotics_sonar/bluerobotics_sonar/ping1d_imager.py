@@ -77,7 +77,7 @@ class Ping1DImagerNode(Node):
                                         self.image_length), dtype=np.uint8)
         self.scan_image = np.roll(self.scan_image, -1, axis=1)
         self.scan_image[:, -1] = msg.profile_data
-        scan_image = cv2.applyColorMap(self.scan_image, cv2.COLORMAP_JET)
+        scan_image = cv2.applyColorMap(self.scan_image, cv2.COLORMAP_VIRIDIS)
         scan_image = cv2.putText(scan_image, 
                                  f'{msg.distance:.2f} m',
                                  (1, 10), 

@@ -81,7 +81,7 @@ class Ping360ImagerNode(Node):
                                  center=(750, 750), 
                                  maxRadius=750, 
                                  flags=cv2.WARP_INVERSE_MAP|cv2.WARP_FILL_OUTLIERS)
-      scan_image = cv2.applyColorMap(scan_image, cv2.COLORMAP_JET)
+      scan_image = cv2.applyColorMap(scan_image, cv2.COLORMAP_VIRIDIS)
       scan_image = cv2.line(scan_image, 
                             (750, 750), 
                             (750 + int(750 * np.cos(np.deg2rad(msg.angle*0.9))), 
