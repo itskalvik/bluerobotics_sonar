@@ -134,7 +134,7 @@ class Ping360Node(Node):
         self.msg.transmit_duration = data.transmit_duration
         self.msg.sample_period = data.sample_period
         self.msg.transmit_frequency = data.transmit_frequency
-        self.msg.number_of_samples = data.number_of_samples
+        self.msg.range = self.range
         self.msg.profile_data = data.data
         self.msg.distance = self.get_distance(np.frombuffer(data.data, dtype=np.uint8))
 
@@ -184,9 +184,9 @@ class Ping360Node(Node):
       peaks, _ = find_peaks(data, height=self.scan_threshold)
       if len(peaks)>0:
           dist = peaks[0]+self.offset+1
-          dist *= self.get_range()/self.num_points
+          dist *= self.range/self.num_points
       else:
-          dist = self.get_range()
+          dist = self.range
       return dist
 
   '''
@@ -211,11 +211,13 @@ class Ping360Node(Node):
           
           self.adjust_transmit_duration()
   
-  def get_range(self):
-      return self.sample_period_in_seconds() * self.num_points * self._speed_of_sound / 2
-
   def sample_period_in_seconds(self):
-      return self.sample_period * self._samplePeriodTickDuration
+    return self.sample_period * self._samplePeriodTickDuration
+  
+  def get_range(self):
+      range = self.sample_period_in_seconds() * self.num_points * self._speed_of_sound / 2
+      self.range = range
+      return range
 
   def set_range(self, new_range: float):
       '''Compute the transmit_duration, sample period, and number of points based on the range

@@ -36,8 +36,8 @@ from rclpy.node import Node
 from rcl_interfaces.msg import SetParametersResult
 
 
-class Ping360ViewerNode(Node):
-  def __init__(self, node_name='ping360_viewer'):
+class Ping360ImagerNode(Node):
+  def __init__(self, node_name='ping360_imager'):
     super().__init__(node_name)
 
     # Declare Parameters
@@ -118,7 +118,7 @@ class Ping360ViewerNode(Node):
 
 def main(args=None):
     rclpy.init(args=args)
-    node = Ping360ViewerNode()
+    node = Ping360ImagerNode()
     rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()

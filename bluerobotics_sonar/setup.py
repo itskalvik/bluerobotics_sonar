@@ -21,9 +21,9 @@ setup(
     entry_points={
         'console_scripts': [
             'ping1d = bluerobotics_sonar.ping1d:main',
-            'ping1d_viewer = bluerobotics_sonar.ping1d_viewer:main',
+            'ping1d_imager = bluerobotics_sonar.ping1d_imager:main',
             'ping360 = bluerobotics_sonar.ping360:main',
-            'ping360_viewer = bluerobotics_sonar.ping360_viewer:main',
+            'ping360_imager = bluerobotics_sonar.ping360_imager:main',
         ],
     },
 )
