@@ -91,6 +91,7 @@ class Ping360ImagerNode(Node):
                               (750, 750), 
                               750, 
                               (255, 255, 255), 2)
+      scan_image = cv2.flip(scan_image, 0)
       if self.rotation != 0.0:
         scan_image = cv2.rotate(scan_image, 
                                 cv2.ROTATE_90_CLOCKWISE if self.rotation > 0 else cv2.ROTATE_90_COUNTERCLOCKWISE)

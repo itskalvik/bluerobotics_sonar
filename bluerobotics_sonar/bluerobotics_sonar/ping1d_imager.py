@@ -43,7 +43,7 @@ class Ping1DImagerNode(Node):
 
         # Declare Parameters
         params = {
-          'image_length': [100, int],
+          'image_length': [200, int],
           'data_topic': ['sonar/ping1d/data', str],
           'image_topic': ['sonar/ping1d/image', str],
         }
@@ -78,16 +78,16 @@ class Ping1DImagerNode(Node):
         self.scan_image = np.roll(self.scan_image, -1, axis=1)
         self.scan_image[:, -1] = msg.profile_data
         scan_image = cv2.applyColorMap(self.scan_image, cv2.COLORMAP_JET)
+        scan_image = cv2.rectangle(scan_image,
+                                    (0, 0), 
+                                    (50, 12), 
+                                    (0, 0, 0), -1)
         scan_image = cv2.putText(scan_image, 
                                  f'{msg.distance:.2f} m',
                                  (1, 10), 
                                  cv2.FONT_HERSHEY_SIMPLEX, 
                                  0.4, (255, 255, 255), 1, 
                                  cv2.LINE_AA)
-        scan_image = cv2.rectangle(scan_image,
-                                    (0, 0), 
-                                    (self.image_length, 10), 
-                                    (255, 255, 255), -1)
         self.image_publisher.publish(self.bridge.cv2_to_imgmsg(scan_image))
 
     def set_param_callback(self, params):
