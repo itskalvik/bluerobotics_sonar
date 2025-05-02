@@ -97,6 +97,17 @@ class Ping360Node(Node):
     if not self.sonar.initialize():
       self.get_logger().info("Failed to initialize Ping!")
       exit(1)
+
+    # Verify sonar firmware version is compatible
+    device_data = self.sonar.get_device_information()
+    if device_data['device_type'] == 2:
+        if device_data['firmware_version_major'] >= 3 and \
+            device_data['firmware_version_minor'] >= 3:
+            self.get_logger().info("Ping360 device detected!")
+    else:
+        self.get_logger().info("Ping360 device not detected!")
+        exit(1)
+
     self.set_speed_of_sound(self.speed_of_sound)
     self.set_range(self.range)
     self.sonar.control_auto_transmit(

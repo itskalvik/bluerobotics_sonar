@@ -70,6 +70,20 @@ class Ping1DNode(Node):
         if not self.sonar.initialize():
             self.get_logger().info("Failed to initialize Ping!")
             exit(1)
+
+        # Verify sonar firmware version is compatible
+        device_data = self.sonar.get_device_information()
+        if device_data['device_type'] == 1:
+            if device_data['device_revision'] == 1:
+                if device_data['firmware_version_major'] >= 3 and \
+                     device_data['firmware_version_minor'] >= 29:
+                      self.get_logger().info("Ping1D device detected!")
+            elif device_data['device_revision'] == 2:
+                self.get_logger().info("Ping2 device detected!")
+        else:
+            self.get_logger().info("Ping1D device not detected!")
+            exit(1)
+
         self.sonar.set_gain_setting(self.gain_setting)
         self.sonar.set_mode_auto(self.mode_auto)
         self.sonar.set_ping_enable(self.ping_enable)
