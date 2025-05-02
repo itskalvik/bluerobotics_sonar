@@ -74,15 +74,12 @@ class Ping1DNode(Node):
         # Verify sonar firmware version is compatible
         device_data = self.sonar.get_device_information()
         if device_data['device_type'] == 1:
+            self.get_logger().info(f"Ping1D firmware version: {device_data['firmware_version_major']}.{device_data['firmware_version_minor']}")     
             if device_data['device_revision'] == 1:
-                if device_data['firmware_version_major'] >= 3 and \
-                     device_data['firmware_version_minor'] >= 29:
-                      self.get_logger().info("Ping1D device detected!")
-            elif device_data['device_revision'] == 2:
-                self.get_logger().info("Ping2 device detected!")
-        else:
-            self.get_logger().info("Ping1D device not detected!")
-            exit(1)
+                self.get_logger().info("Ping1D device detected!")
+                if device_data['firmware_version_major'] < 3 and \
+                     device_data['firmware_version_minor'] < 29:
+                    self.get_logger().info("Ping1D firmware version is not compatible! Update to 3.29 or higher.")                      
 
         self.sonar.set_gain_setting(self.gain_setting)
         self.sonar.set_mode_auto(self.mode_auto)

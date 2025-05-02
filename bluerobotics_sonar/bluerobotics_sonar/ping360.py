@@ -95,18 +95,17 @@ class Ping360Node(Node):
     else:
       self.sonar.connect_serial(self.device, self.baudrate)
     if not self.sonar.initialize():
-      self.get_logger().info("Failed to initialize Ping!")
+      self.get_logger().info("Failed to initialize Ping360!")
       exit(1)
 
     # Verify sonar firmware version is compatible
     device_data = self.sonar.get_device_information()
     if device_data['device_type'] == 2:
-        if device_data['firmware_version_major'] >= 3 and \
-            device_data['firmware_version_minor'] >= 3:
-            self.get_logger().info("Ping360 device detected!")
-    else:
-        self.get_logger().info("Ping360 device not detected!")
-        exit(1)
+        self.get_logger().info(f"Ping360 firmware version: {device_data['firmware_version_major']}.{device_data['firmware_version_minor']}")     
+        if device_data['firmware_version_major'] < 3 and \
+             device_data['firmware_version_minor'] < 3:
+            self.get_logger().info("Ping360 firmware version is not compatible! Update to 3.3 or higher.")      
+            exit(1)
 
     self.set_speed_of_sound(self.speed_of_sound)
     self.set_range(self.range)
