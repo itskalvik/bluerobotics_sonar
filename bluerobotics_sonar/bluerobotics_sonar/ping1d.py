@@ -44,8 +44,8 @@ class Ping1DNode(Node):
           'mode_auto': [0, int],         # default 0: manual mode, 1: auto mode
           'ping_enable': [True, bool],
           'ping_interval': [100, int],
-          'scan_start': [0.3, float],    # default 0.3 [m] range(0.3 to 2)
-          'scan_length': [2.0, float],   # default 2.0 [m] range(1 to 100)
+          'scan_start': [0.0, float], 
+          'scan_length': [1.0, float],   # default 2.0 [m] range(1 to 100)
           'speed_of_sound': [1500, int], # m/s in water
           'device': ['/dev/ttyUSB0', int],
           'baudrate': [115200, int],
