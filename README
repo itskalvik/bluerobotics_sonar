@@ -1,0 +1,145 @@
+
+# Blue Robotics Sonar ROS 2 Package
+
+This ROS 2 package provides drivers and visualizers for the Blue Robotics [**Ping1D**](https://bluerobotics.com/store/sonars/echosounders/ping-sonar-r2-rp/) and [**Ping360**](https://bluerobotics.com/store/sonars/imaging-sonars/ping360-sonar-r1-rp/) sonar sensors. It includes four nodes:
+
+- `ping1d`: Publishes sonar data from the Ping1D device.
+- `ping1d_imager`: Converts Ping1D data into real-time image visualizations.
+- `ping360`: Publishes sonar data from the Ping360 device.
+- `ping360_imager`: Converts Ping360 data into real-time radial image visualizations.
+
+---
+
+## Table of Contents
+
+- [Installation](#installation)
+- [Nodes and Usage](#nodes-and-usage)
+  - [ping1d](#ping1d)
+  - [ping1d_imager](#ping1d_imager)
+  - [ping360](#ping360)
+  - [ping360_imager](#ping360_imager)
+- [License](#license)
+
+---
+
+## Installation
+
+Install [Blue Robotics ping-python](https://github.com/bluerobotics/ping-python/tree/deployment) package:
+```bash
+git clone --single-branch --branch deployment https://github.com/bluerobotics/ping-python.git
+cd ping-python
+python3 setup.py install --user
+```
+
+Install [Blue Robotics Sonar](https://github.com/itskalvik/bluerobotics_sonar) ROS2 package:
+
+```bash
+cd ~/ros2_ws/src
+git clone https://github.com/itskalvik/bluerobotics_sonar.git
+cd ~/ros2_ws
+rosdep install --from-paths src --ignore-src -r -y
+colcon build
+source install/setup.bash
+```
+
+---
+
+## Nodes and Usage
+
+### `ping1d`
+
+**Description:** Publishes sonar profiles from the Blue Robotics Ping1D.
+
+**Parameters:**
+
+| Name             | Type   | Default         | Description                                  |
+|------------------|--------|-----------------|----------------------------------------------|
+| `device`         | string | `/dev/ttyUSB0`  | Serial port or UDP IP address                   |
+| `baudrate`       | int    | `115200`        | Baudrate for serial connection               |
+| `gain_setting`   | int    | `0`             | Gain level [0–6]                             |
+| `mode_auto`      | int    | `0`             | Manual (0) or auto (1) mode                  |
+| `ping_enable`    | bool   | `true`          | Whether sonar is enabled                     |
+| `ping_interval`  | int    | `100`           | Interval between pings (ms)                  |
+| `scan_start`     | float  | `0.0`           | Minimum range (m)                            |
+| `scan_length`    | float  | `1.0`           | Range length (m)                             |
+| `speed_of_sound` | int    | `1500`          | Speed of sound in water (m/s)                        |
+| `topic`          | string | `sonar/ping1d/data` | Output topic                             |
+| `frame_id`       | string | `ping1d`        | TF frame ID                                  |
+
+**Run Example:**
+```bash
+ros2 run bluerobotics_sonar ping1d
+```
+
+---
+
+### `ping1d_imager`
+
+**Description:** Subscribes to Ping1D data and publishes a waterfall scan image.
+
+**Parameters:**
+
+| Name           | Type   | Default              | Description                          |
+|----------------|--------|----------------------|--------------------------------------|
+| `data_topic`   | string | `sonar/ping1d/data`  | Input sonar data topic               |
+| `image_topic`  | string | `sonar/ping1d/image` | Output image topic                   |
+| `image_length` | int    | `200`                | Width (in samples) of scroll image    |
+
+**Run Example:**
+```bash
+ros2 run bluerobotics_sonar ping1d_imager
+```
+
+---
+
+### `ping360`
+
+**Description:** Publishes sonar profiles from the Blue Robotics Ping360.
+
+**Parameters (subset):**
+
+| Name              | Type   | Default            | Description                                  |
+|-------------------|--------|--------------------|----------------------------------------------|
+| `device`          | string | `/dev/ttyUSB0`     | Serial port or UDP IP address                   |
+| `baudrate`        | int    | `115200`           | Baudrate                                     |
+| `mode`            | int    | `1`                | Scan mode (always 1)                        |
+| `gain_setting`    | int    | `0`                | Gain level [0–6]                                   |
+| `transmit_frequency` | int | `750`              | Transmit frequency (kHz)                     |
+| `start_angle`     | int    | `0`                | Starting angle (Grads)                          |
+| `stop_angle`      | int    | `399`              | Stopping angle (Grads)                         |
+| `num_steps`       | int    | `1`                | Step size between angles                     |
+| `range`           | float  | `1.0`              | Scan range in meters                         |
+| `motor_off`       | bool   | `false`            | If true, stops sonar                      |
+| `speed_of_sound`  | int    | `1500`             | Speed of sound in water (m/s)                    |
+| `topic`           | string | `sonar/ping360/data` | Output topic                              |
+| `frame_id`        | string | `ping360`          | TF frame ID                                  |
+
+**Run Example:**
+```bash
+ros2 run bluerobotics_sonar ping360
+```
+
+---
+
+### `ping360_imager`
+
+**Description:** Converts Ping360 sonar data into a polar image and publishes it.
+
+**Parameters:**
+
+| Name         | Type   | Default              | Description                                |
+|--------------|--------|----------------------|--------------------------------------------|
+| `data_topic` | string | `sonar/ping360/data` | Input sonar data topic                     |
+| `image_topic`| string | `sonar/ping360/image`| Output image topic                         |
+| `rotation`   | float  | `0.0`                | Optional image rotation to match sonar mount     |
+
+**Run Example:**
+```bash
+ros2 run bluerobotics_sonar ping360_imager
+```
+
+---
+
+## License
+
+This package is licensed under the MIT License. See the top of each file or [LICENSE](LICENSE) for details.
