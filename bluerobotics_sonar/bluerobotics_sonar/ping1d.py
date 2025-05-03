@@ -24,7 +24,6 @@
 # SOFTWARE.
 #-----------------------------------------------------------------------------------
 
-
 from brping import Ping1D
 from brping.definitions import PING1D_PROFILE
 from bluerobotics_sonar_msgs.msg import SonarPing1D
@@ -35,22 +34,23 @@ from rcl_interfaces.msg import SetParametersResult
 
 
 class Ping1DNode(Node):
+
     def __init__(self, node_name='ping1d'):
         super().__init__(node_name)
 
         # Declare Parameters
         params = {
-          'gain_setting': [0, int],      # int 0 - 6
-          'mode_auto': [0, int],         # default 0: manual mode, 1: auto mode
-          'ping_enable': [True, bool],
-          'ping_interval': [100, int],
-          'scan_start': [0.0, float], 
-          'scan_length': [1.0, float],   # default 2.0 [m] range(1 to 100)
-          'speed_of_sound': [1500, int], # m/s in water
-          'device': ['/dev/ttyUSB0', int],
-          'baudrate': [115200, int],
-          'topic': ['sonar/ping1d/data', str],
-          'frame_id': ['ping1d', str],
+            'gain_setting': [0, int],
+            'mode_auto': [0, int],
+            'ping_enable': [True, bool],
+            'ping_interval': [100, int],
+            'scan_start': [0.0, float],
+            'scan_length': [1.0, float], 
+            'speed_of_sound': [1500, int],
+            'device': ['/dev/ttyUSB0', int],
+            'baudrate': [115200, int],
+            'topic': ['sonar/ping1d/data', str],
+            'frame_id': ['ping1d', str],
         }
 
         for param, [value, dtype] in params.items():
@@ -59,7 +59,8 @@ class Ping1DNode(Node):
             self.get_logger().info(f'{param}: {value}')
 
         # Handle parameter updates
-        self.param_handler_ptr_ = self.add_on_set_parameters_callback(self.set_param_callback)
+        self.param_handler_ptr_ = self.add_on_set_parameters_callback(
+            self.set_param_callback)
 
         # Init and configure Ping1D sonar
         self.sonar = Ping1D()
@@ -74,26 +75,28 @@ class Ping1DNode(Node):
         # Verify sonar firmware version is compatible
         device_data = self.sonar.get_device_information()
         if device_data['device_type'] == 1:
-            self.get_logger().info(f"Ping1D firmware version: {device_data['firmware_version_major']}.{device_data['firmware_version_minor']}")     
+            self.get_logger().info(
+                f"Ping1D firmware version: {device_data['firmware_version_major']}.{device_data['firmware_version_minor']}"
+            )
             if device_data['device_revision'] == 1:
                 self.get_logger().info("Ping1D device detected!")
                 if device_data['firmware_version_major'] < 3 and \
                      device_data['firmware_version_minor'] < 29:
-                    self.get_logger().info("Ping1D firmware version is not compatible! Update to 3.29 or higher.")                      
+                    self.get_logger().info(
+                        "Ping1D firmware version is not compatible! Update to 3.29 or higher."
+                    )
 
         self.sonar.set_gain_setting(self.gain_setting)
         self.sonar.set_mode_auto(self.mode_auto)
         self.sonar.set_ping_enable(self.ping_enable)
         self.sonar.set_ping_interval(self.ping_interval)
-        self.sonar.set_range(int(self.scan_start*1000), 
-                             int(self.scan_length*1000))
-        self.sonar.set_speed_of_sound(int(self.speed_of_sound*1000))
+        self.sonar.set_range(int(self.scan_start * 1000),
+                             int(self.scan_length * 1000))
+        self.sonar.set_speed_of_sound(int(self.speed_of_sound * 1000))
         self.sonar.control_continuous_start(PING1D_PROFILE)
 
         # Setup the publisher
-        self.publisher = self.create_publisher(SonarPing1D, 
-                                               self.topic, 
-                                               10)
+        self.publisher = self.create_publisher(SonarPing1D, self.topic, 10)
         self.get_logger().info("Node initialized! Publishing sonar data...")
 
         # Continuously publish sonar data when available
@@ -107,12 +110,12 @@ class Ping1DNode(Node):
             data = self.sonar.wait_message([PING1D_PROFILE])
             if data:
                 self.msg.header.stamp = self.get_clock().now().to_msg()
-                self.msg.distance = data.distance*0.001
+                self.msg.distance = data.distance * 0.001
                 self.msg.confidence = data.confidence
                 self.msg.transmit_duration = data.transmit_duration
                 self.msg.ping_number = data.ping_number
-                self.msg.scan_start = data.scan_start*0.001
-                self.msg.scan_length = data.scan_length*0.001
+                self.msg.scan_start = data.scan_start * 0.001
+                self.msg.scan_length = data.scan_length * 0.001
                 self.msg.gain_setting = data.gain_setting
                 self.msg.profile_data = data.profile_data
 
@@ -137,19 +140,21 @@ class Ping1DNode(Node):
             if param.name == 'ping_interval':
                 self.sonar.set_ping_interval(self.ping_interval)
             if param.name == 'scan_start':
-                self.sonar.set_range(int(self.scan_start*1000), 
-                                     int(self.scan_length*1000))
+                self.sonar.set_range(int(self.scan_start * 1000),
+                                     int(self.scan_length * 1000))
             if param.name == 'scan_length':
-                self.sonar.set_range(int(self.scan_start*1000), 
-                                     int(self.scan_length*1000))
+                self.sonar.set_range(int(self.scan_start * 1000),
+                                     int(self.scan_length * 1000))
             if param.name == 'speed_of_sound':
-                self.sonar.set_speed_of_sound(int(self.speed_of_sound*1000))
+                self.sonar.set_speed_of_sound(int(self.speed_of_sound * 1000))
 
         return result
+
 
 def main(args=None):
     rclpy.init(args=args)
     node = Ping1DNode()
+
 
 if __name__ == '__main__':
     main()
