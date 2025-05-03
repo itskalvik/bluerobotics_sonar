@@ -1,7 +1,7 @@
 
 # Blue Robotics Sonar ROS 2 Package
 
-This ROS 2 package provides drivers and visualizers for the Blue Robotics [**Ping1D**](https://bluerobotics.com/store/sonars/echosounders/ping-sonar-r2-rp/) and [**Ping360**](https://bluerobotics.com/store/sonars/imaging-sonars/ping360-sonar-r1-rp/) sonar sensors. It includes four nodes:
+This ROS2 package provides nodes for interfacing with and visualizing data from Blue Robotics [**Ping1D**](https://bluerobotics.com/store/sonars/echosounders/ping-sonar-r2-rp/) and [**Ping360**](https://bluerobotics.com/store/sonars/imaging-sonars/ping360-sonar-r1-rp/) sonars. It includes four nodes:
 
 - `ping1d`: Publishes sonar data from the Ping1D device.
 - `ping1d_imager`: Converts Ping1D data into real-time image visualizations.
@@ -50,6 +50,8 @@ source install/setup.bash
 
 **Description:** Publishes sonar profiles from the Blue Robotics Ping1D.
 
+**Published Topic**: `sonar/ping1d/data` (`bluerobotics_sonar_msgs/SonarPing1D`)
+
 **Parameters:** The parameters can be updated while running the node.
 
 | Name             | Type   | Default         | Description                                  |
@@ -77,6 +79,10 @@ ros2 run bluerobotics_sonar ping1d
 
 **Description:** Subscribes to Ping1D data and publishes a waterfall scan image.
 
+**Published Topic**: `sonar/ping1d/image` (`sensor_msgs/Image`)
+
+**Subscribed Topics**: `sonar/ping1d/data`
+
 **Parameters:** The parameters can be updated while running the node.
 
 | Name           | Type   | Default              | Description                          |
@@ -95,6 +101,8 @@ ros2 run bluerobotics_sonar ping1d_imager
 ### `ping360`
 
 **Description:** Publishes sonar profiles from the Blue Robotics Ping360.
+
+**Published Topic**: `sonar/ping360/data` (`bluerobotics_sonar_msgs/SonarPing360`)
 
 **Parameters:** The parameters can be updated while running the node.
 
@@ -127,6 +135,10 @@ ros2 run bluerobotics_sonar ping360
 ### `ping360_imager`
 
 **Description:** Converts Ping360 sonar data into a polar image and publishes it.
+
+**Published Topic**: `sonar/ping360/image` (`sensor_msgs/Image`)
+
+**Subscribed Topics**: `sonar/ping360/data`
 
 **Parameters:** The parameters can be updated while running the node.
 
