@@ -90,6 +90,8 @@ ros2 run bluerobotics_sonar ping1d
 | `data_topic`   | string | `sonar/ping1d/data`  | Input sonar data topic               |
 | `image_topic`  | string | `sonar/ping1d/image` | Output image topic                   |
 | `image_length` | int    | `200`                | Width (in samples) of scroll image    |
+| `bag_file`     | str    |                      | Optional path to an input ros2 bag file with sonar data |
+| `video_file`   | str    |                      | Optional path to an output mp4 video file |
 
 **Run Example:**
 ```bash
@@ -147,6 +149,8 @@ ros2 run bluerobotics_sonar ping360
 | `data_topic` | string | `sonar/ping360/data` | Input sonar data topic                     |
 | `image_topic`| string | `sonar/ping360/image`| Output image topic                         |
 | `rotation`   | float  | `0.0`                | Optional image rotation to match sonar mount     |
+| `bag_file`     | str    |                      | Optional path to an input ros2 bag file with sonar data |
+| `video_file`   | str    |                      | Optional path to an output mp4 video file |
 
 **Run Example:**
 ```bash
