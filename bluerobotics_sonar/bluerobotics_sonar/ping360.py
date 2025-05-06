@@ -133,28 +133,36 @@ class Ping360Node(Node):
         self.msg = SonarPing360()
         self.msg.header.frame_id = self.frame_id
 
-        while rclpy.ok():
-            if self.motor_off:
-                rclpy.spin_once(self, timeout_sec=1.0)
-                continue
-            data = self.sonar.wait_message([PING360_AUTO_DEVICE_DATA])
-            if data:
-                self.msg.header.stamp = self.get_clock().now().to_msg()
-                self.msg.mode = data.mode
-                self.msg.gain_setting = data.gain_setting
-                self.msg.angle = data.angle
-                self.msg.transmit_duration = data.transmit_duration
-                self.msg.sample_period = data.sample_period
-                self.msg.transmit_frequency = data.transmit_frequency
-                self.msg.range = self.range
-                self.msg.profile_data = data.data
-                self.msg.distance = self.get_distance(
-                    np.frombuffer(data.data, dtype=np.uint8))
+        try:
+            while True:
+                if self.motor_off:
+                    rclpy.spin_once(self, timeout_sec=1.0)
+                    continue
+                data = self.sonar.wait_message([PING360_AUTO_DEVICE_DATA])
+                if data:
+                    self.msg.header.stamp = self.get_clock().now().to_msg()
+                    self.msg.mode = data.mode
+                    self.msg.gain_setting = data.gain_setting
+                    self.msg.angle = data.angle
+                    self.msg.transmit_duration = data.transmit_duration
+                    self.msg.sample_period = data.sample_period
+                    self.msg.transmit_frequency = data.transmit_frequency
+                    self.msg.range = self.range
+                    self.msg.profile_data = data.data
+                    self.msg.distance = self.get_distance(
+                        np.frombuffer(data.data, dtype=np.uint8))
 
-                self.publisher.publish(self.msg)
+                    self.publisher.publish(self.msg)
 
-                # Allow for params callback to be processed
-                rclpy.spin_once(self, timeout_sec=0.01)
+                    # Allow for params callback to be processed
+                    rclpy.spin_once(self, timeout_sec=0.01)
+        finally:
+            # Stop the transponder before destroying the node
+            if not len(self.device.split('.')) == 4:
+                self.sonar.connect_serial(self.device, self.baudrate)
+            self.sonar.control_motor_off()
+            self.destroy_node()
+            rclpy.shutdown()
 
     def set_param_callback(self, params):
         update = False
