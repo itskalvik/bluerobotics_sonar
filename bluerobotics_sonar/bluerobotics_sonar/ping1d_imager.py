@@ -48,8 +48,8 @@ class Ping1DImagerNode(Node):
         # Declare Parameters
         params = {
             'image_length': [200, int],
-            'data_topic': ['sonar/ping1d/data', str],
-            'image_topic': ['sonar/ping1d/image', str],
+            'data_topic': ['/sonar/ping1d/data', str],
+            'image_topic': ['/sonar/ping1d/image', str],
             'bag_file': ['', str],
             'video_file': ['', str],
         }

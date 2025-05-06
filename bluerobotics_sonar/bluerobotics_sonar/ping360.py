@@ -76,7 +76,7 @@ class Ping360Node(Node):
             'scan_threshold': [100, int],
             'range': [1.0, float],
             'offset': [120, int],
-            'topic': ['sonar/ping360/data', str],
+            'topic': ['/sonar/ping360/data', str],
             'frame_id': ['ping360', str],
         }
 

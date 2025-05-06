@@ -50,7 +50,7 @@ source install/setup.bash
 
 **Description:** Publishes sonar profiles from the Blue Robotics Ping1D.
 
-**Published Topic**: `sonar/ping1d/data` (`bluerobotics_sonar_msgs/SonarPing1D`)
+**Published Topic**: `/sonar/ping1d/data` (`bluerobotics_sonar_msgs/SonarPing1D`)
 
 **Parameters:** The parameters can be updated while running the node.
 
@@ -65,7 +65,7 @@ source install/setup.bash
 | `scan_start`     | float  | `0.0`           | Minimum range (m) [0-99]                           |
 | `scan_length`    | float  | `1.0`           | Maximum range (m) [0.3-100]                            |
 | `speed_of_sound` | int    | `1500`          | Speed of sound in water (m/s)                        |
-| `topic`          | string | `sonar/ping1d/data` | Output topic                             |
+| `topic`          | string | `/sonar/ping1d/data` | Output topic                             |
 | `frame_id`       | string | `ping1d`        | TF frame ID                                  |
 
 **Run Example:**
@@ -79,16 +79,16 @@ ros2 run bluerobotics_sonar ping1d
 
 **Description:** Subscribes to Ping1D data and publishes a waterfall scan image.
 
-**Published Topic**: `sonar/ping1d/image` (`sensor_msgs/Image`)
+**Published Topic**: `/sonar/ping1d/image` (`sensor_msgs/Image`)
 
-**Subscribed Topics**: `sonar/ping1d/data`
+**Subscribed Topics**: `/sonar/ping1d/data`
 
 **Parameters:** The parameters can be updated while running the node.
 
 | Name           | Type   | Default              | Description                          |
 |----------------|--------|----------------------|--------------------------------------|
-| `data_topic`   | string | `sonar/ping1d/data`  | Input sonar data topic               |
-| `image_topic`  | string | `sonar/ping1d/image` | Output image topic                   |
+| `data_topic`   | string | `/sonar/ping1d/data`  | Input sonar data topic               |
+| `image_topic`  | string | `/sonar/ping1d/image` | Output image topic                   |
 | `image_length` | int    | `200`                | Width (in samples) of scroll image    |
 | `bag_file`     | str    |                      | Optional path to an input ros2 bag file with sonar data |
 | `video_file`   | str    |                      | Optional path to an output mp4 video file |
@@ -104,7 +104,7 @@ ros2 run bluerobotics_sonar ping1d_imager
 
 **Description:** Publishes sonar profiles from the Blue Robotics Ping360.
 
-**Published Topic**: `sonar/ping360/data` (`bluerobotics_sonar_msgs/SonarPing360`)
+**Published Topic**: `/sonar/ping360/data` (`bluerobotics_sonar_msgs/SonarPing360`)
 
 **Parameters:** The parameters can be updated while running the node.
 
@@ -124,7 +124,7 @@ ros2 run bluerobotics_sonar ping1d_imager
 | `scan_threshold`       | int   | `100`            | Threshold for peak detection                      |
 | `offset`       | int   | `120`            | Number of samples to ignore in each sonar profile before peak detection                    |
 | `speed_of_sound`  | int    | `1500`             | Speed of sound in water (m/s)                    |
-| `topic`           | string | `sonar/ping360/data` | Output topic                              |
+| `topic`           | string | `/sonar/ping360/data` | Output topic                              |
 | `frame_id`        | string | `ping360`          | TF frame ID                                  |
 
 **Run Example:**
@@ -138,16 +138,16 @@ ros2 run bluerobotics_sonar ping360
 
 **Description:** Converts Ping360 sonar data into a polar image and publishes it.
 
-**Published Topic**: `sonar/ping360/image` (`sensor_msgs/Image`)
+**Published Topic**: `/sonar/ping360/image` (`sensor_msgs/Image`)
 
-**Subscribed Topics**: `sonar/ping360/data`
+**Subscribed Topics**: `/sonar/ping360/data`
 
 **Parameters:** The parameters can be updated while running the node.
 
 | Name         | Type   | Default              | Description                                |
 |--------------|--------|----------------------|--------------------------------------------|
-| `data_topic` | string | `sonar/ping360/data` | Input sonar data topic                     |
-| `image_topic`| string | `sonar/ping360/image`| Output image topic                         |
+| `data_topic` | string | `/sonar/ping360/data` | Input sonar data topic                     |
+| `image_topic`| string | `/sonar/ping360/image`| Output image topic                         |
 | `rotation`   | float  | `0.0`                | Optional image rotation to match sonar mount     |
 | `bag_file`     | str    |                      | Optional path to an input ros2 bag file with sonar data |
 | `video_file`   | str    |                      | Optional path to an output mp4 video file |

@@ -47,8 +47,8 @@ class Ping360ImagerNode(Node):
 
         # Declare Parameters
         params = {
-            'data_topic': ['sonar/ping360/data', str],
-            'image_topic': ['sonar/ping360/image', str],
+            'data_topic': ['/sonar/ping360/data', str],
+            'image_topic': ['/sonar/ping360/image', str],
             'rotation': [0.0, float],
             'bag_file': ['', str],
             'video_file': ['', str],

@@ -29,7 +29,7 @@ from launch import LaunchDescription
 
 
 def generate_launch_description():
-    data_topic = 'sonar/ping360/data'
+    data_topic = '/sonar/ping360/data'
     sonar_range = 1.0  # meters
 
     ping360_data = Node(package='bluerobotics_sonar',

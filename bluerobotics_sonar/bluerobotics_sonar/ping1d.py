@@ -49,7 +49,7 @@ class Ping1DNode(Node):
             'speed_of_sound': [1500, int],
             'device': ['/dev/ttyUSB0', int],
             'baudrate': [115200, int],
-            'topic': ['sonar/ping1d/data', str],
+            'topic': ['/sonar/ping1d/data', str],
             'frame_id': ['ping1d', str],
         }
 
