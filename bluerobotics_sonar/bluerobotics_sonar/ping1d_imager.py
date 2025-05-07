@@ -113,7 +113,7 @@ class Ping1DImagerNode(Node):
                     return
             self.video_writer.write(scan_image)
         else:
-            self.publisher.publish(self.br.cv2_to_imgmsg(scan_image))
+            self.publisher.publish(self.bridge.cv2_to_imgmsg(scan_image))
 
     def process_bag(self):
         storage_options = StorageOptions(uri=self.bag_file,
