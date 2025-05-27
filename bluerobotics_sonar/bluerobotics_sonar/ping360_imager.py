@@ -69,7 +69,8 @@ class Ping360ImagerNode(Node):
         # Determine if output is a topic or a video
         if len(self.video_file) == 0:
             self.to_video = False
-            self.publisher = self.create_publisher(Image, self.image_topic, 10)
+            self.publisher = self.create_publisher(Image, self.image_topic,
+                                                   rclpy.qos.qos_profile_sensor_data)
             self.get_logger().info("Publishing data to ros2 topic")
         else:
             self.video_writer = None
@@ -81,7 +82,8 @@ class Ping360ImagerNode(Node):
             self.from_bag = False
             self.subscrber = self.create_subscription(SonarPing360,
                                                       self.data_topic,
-                                                      self.data_callback, 10)
+                                                      self.data_callback, 
+                                                      rclpy.qos.qos_profile_sensor_data)
             self.get_logger().info("Reading data from ros2 topic")
         else:
             self.from_bag = True
