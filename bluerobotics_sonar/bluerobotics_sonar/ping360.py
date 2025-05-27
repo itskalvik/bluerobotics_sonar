@@ -83,7 +83,9 @@ class Ping360Node(Node):
         for param, [value, dtype] in params.items():
             self.declare_parameter(param, value)
             exec(f"self.{param}:dtype = self.get_parameter(param).value")
-            self.get_logger().info(f'{param}: {value}')
+        params = self.get_parameters(params.keys())
+        for param in params:
+            self.get_logger().info(f'{param.name}: {param.value}')
 
         # Handle parameter updates
         _ = self.add_on_set_parameters_callback(self.set_param_callback)
@@ -126,7 +128,8 @@ class Ping360Node(Node):
             delay=self.delay)
 
         # Setup the publisher
-        self.publisher = self.create_publisher(SonarPing360, self.topic, 10)
+        self.publisher = self.create_publisher(SonarPing360, self.topic,
+                                               rclpy.qos.qos_profile_sensor_data)
         self.get_logger().info("Node initialized! Publishing sonar data...")
 
         # Continuously publish sonar data when available

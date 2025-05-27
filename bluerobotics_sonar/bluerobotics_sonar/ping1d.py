@@ -43,7 +43,7 @@ class Ping1DNode(Node):
             'gain_setting': [0, int],
             'mode_auto': [0, int],
             'ping_enable': [True, bool],
-            'ping_interval': [100, int],
+            'ping_interval': [33, int],
             'scan_start': [0.0, float],
             'scan_length': [1.0, float], 
             'speed_of_sound': [1500, int],
@@ -56,7 +56,9 @@ class Ping1DNode(Node):
         for param, [value, dtype] in params.items():
             self.declare_parameter(param, value)
             exec(f"self.{param}:dtype = self.get_parameter(param).value")
-            self.get_logger().info(f'{param}: {value}')
+        params = self.get_parameters(params.keys())
+        for param in params:
+            self.get_logger().info(f'{param.name}: {param.value}')
 
         # Handle parameter updates
         self.param_handler_ptr_ = self.add_on_set_parameters_callback(
@@ -96,7 +98,8 @@ class Ping1DNode(Node):
         self.sonar.control_continuous_start(PING1D_PROFILE)
 
         # Setup the publisher
-        self.publisher = self.create_publisher(SonarPing1D, self.topic, 10)
+        self.publisher = self.create_publisher(SonarPing1D, self.topic,
+                                               rclpy.qos.qos_profile_sensor_data)
         self.get_logger().info("Node initialized! Publishing sonar data...")
 
         # Continuously publish sonar data when available
