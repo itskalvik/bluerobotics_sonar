@@ -170,7 +170,8 @@ class Ping360Node(Node):
     def set_param_callback(self, params):
         update = False
         for param in params:
-            if exec(f"self.{param.name}") != param.value:
+            exec(f"self.flag = self.{param.name} != param.value")
+            if self.flag:
                 exec(f"self.{param.name} = param.value")
                 self.get_logger().info(f'Updated {param.name}: {param.value}')
 

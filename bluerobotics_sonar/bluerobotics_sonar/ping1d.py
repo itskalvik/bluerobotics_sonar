@@ -43,7 +43,8 @@ class Ping1DNode(Node):
             'gain_setting': [0, int],
             'mode_auto': [0, int],
             'ping_enable': [True, bool],
-            'ping_interval': [33, int],
+            'pings_per_second': [30, int],
+            'ping_interval': [-1, int],
             'scan_start': [0.0, float],
             'scan_length': [1.0, float], 
             'speed_of_sound': [1500, int],
@@ -60,6 +61,12 @@ class Ping1DNode(Node):
         for param in params:
             self.get_logger().info(f'{param.name}: {param.value}')
 
+        if self.ping_interval == -1:
+            if self.pings_per_second > 0 and self.pings_per_second <= 50:
+                self.ping_interval = int(1000.0/self.pings_per_second)
+            else:
+                self.ping_interval = 33
+    
         # Handle parameter updates
         self.param_handler_ptr_ = self.add_on_set_parameters_callback(
             self.set_param_callback)
@@ -136,7 +143,8 @@ class Ping1DNode(Node):
     def set_param_callback(self, params):
         result = SetParametersResult(successful=True)
         for param in params:
-            if exec(f"self.{param.name} != param.value"):
+            exec(f"self.flag = self.{param.name} != param.value")
+            if self.flag:
                 exec(f"self.{param.name} = param.value")
                 self.get_logger().info(f'Updated {param.name}: {param.value}')
 
@@ -156,7 +164,12 @@ class Ping1DNode(Node):
                                      int(self.scan_length * 1000))
             if param.name == 'speed_of_sound':
                 self.sonar.set_speed_of_sound(int(self.speed_of_sound * 1000))
-
+            if param.name == 'pings_per_second':
+                if self.pings_per_second > 0 and self.pings_per_second <= 50:
+                    self.ping_interval = int(1000.0/self.pings_per_second)
+                else:
+                    self.get_logger().warn(f"pings_per_second: {self.pings_per_second}; out of range [1-50]! Defaulting to 30 pings/s!")
+                    self.ping_interval = 33
         return result
 
 

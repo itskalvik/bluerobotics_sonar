@@ -92,7 +92,8 @@ ros2 launch bluerobotics_sonar ping360.launch.py
 | `gain_setting`   | int    | `0`             | Gain level [0–6]                             |
 | `mode_auto`      | int    | `0`             | Manual (0) or auto (1) mode                  |
 | `ping_enable`    | bool   | `true`          | Whether sonar is enabled                     |
-| `ping_interval`  | int    | `100`           | Interval between pings (ms)                  |
+| `pings_per_second`| int   | `30`            | Pings per second [1-50]; will be overridden by explicitly setting `ping_interval` |
+| `ping_interval`  | int    | `-1`            | Interval between pings (ms); ignored by default |
 | `scan_start`     | float  | `0.0`           | Minimum range (m) [0-99]                     |
 | `scan_length`    | float  | `1.0`           | Maximum range (m) [0.3-100]                  |
 | `speed_of_sound` | int    | `1500`          | Speed of sound in water (m/s)                |
