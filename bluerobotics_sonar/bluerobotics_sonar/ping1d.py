@@ -29,8 +29,10 @@ from brping.definitions import PING1D_PROFILE
 from bluerobotics_sonar_msgs.msg import SonarPing1D
 
 import rclpy
+from rclpy import qos
 from rclpy.node import Node
 from rcl_interfaces.msg import SetParametersResult
+from rclpy.qos_overriding_options import QoSOverridingOptions
 
 
 class Ping1DNode(Node):
@@ -60,6 +62,15 @@ class Ping1DNode(Node):
         params = self.get_parameters(params.keys())
         for param in params:
             self.get_logger().info(f'{param.name}: {param.value}')
+
+        qos_override_opts = QoSOverridingOptions(
+            policy_kinds=(
+                qos.QoSPolicyKind.HISTORY,
+                qos.QoSPolicyKind.DEPTH,
+                qos.QoSPolicyKind.RELIABILITY,
+                )
+        )
+        SENSOR_QOS = rclpy.qos.qos_profile_sensor_data
 
         if self.ping_interval == -1:
             if self.pings_per_second > 0 and self.pings_per_second <= 50:
@@ -106,7 +117,8 @@ class Ping1DNode(Node):
 
         # Setup the publisher
         self.publisher = self.create_publisher(SonarPing1D, self.topic,
-                                               rclpy.qos.qos_profile_sensor_data)
+                                               SENSOR_QOS,
+                                               qos_overriding_options=qos_override_opts) 
         self.get_logger().info("Node initialized! Publishing sonar data...")
 
         # Continuously publish sonar data when available
@@ -143,6 +155,8 @@ class Ping1DNode(Node):
     def set_param_callback(self, params):
         result = SetParametersResult(successful=True)
         for param in params:
+            if "qos" in param.name:
+                continue
             exec(f"self.flag = self.{param.name} != param.value")
             if self.flag:
                 exec(f"self.{param.name} = param.value")

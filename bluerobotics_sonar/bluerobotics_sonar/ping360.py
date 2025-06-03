@@ -32,8 +32,10 @@ import numpy as np
 from bluerobotics_sonar_msgs.msg import SonarPing360
 
 import rclpy
+from rclpy import qos
 from rclpy.node import Node
 from rcl_interfaces.msg import SetParametersResult
+from rclpy.qos_overriding_options import QoSOverridingOptions
 
 from scipy.signal import find_peaks
 from scipy.ndimage import gaussian_filter1d
@@ -87,6 +89,15 @@ class Ping360Node(Node):
         for param in params:
             self.get_logger().info(f'{param.name}: {param.value}')
 
+        qos_override_opts = QoSOverridingOptions(
+            policy_kinds=(
+                qos.QoSPolicyKind.HISTORY,
+                qos.QoSPolicyKind.DEPTH,
+                qos.QoSPolicyKind.RELIABILITY,
+                )
+        )
+        SENSOR_QOS = rclpy.qos.qos_profile_sensor_data
+
         # Handle parameter updates
         _ = self.add_on_set_parameters_callback(self.set_param_callback)
 
@@ -129,7 +140,8 @@ class Ping360Node(Node):
 
         # Setup the publisher
         self.publisher = self.create_publisher(SonarPing360, self.topic,
-                                               rclpy.qos.qos_profile_sensor_data)
+                                               SENSOR_QOS,
+                                               qos_overriding_options=qos_override_opts) 
         self.get_logger().info("Node initialized! Publishing sonar data...")
 
         # Continuously publish sonar data when available
@@ -170,6 +182,8 @@ class Ping360Node(Node):
     def set_param_callback(self, params):
         update = False
         for param in params:
+            if "qos" in param.name:
+                continue
             exec(f"self.flag = self.{param.name} != param.value")
             if self.flag:
                 exec(f"self.{param.name} = param.value")

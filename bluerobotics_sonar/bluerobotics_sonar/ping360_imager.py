@@ -32,8 +32,10 @@ from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
 
 import rclpy
+from rclpy import qos
 from rclpy.node import Node
 from rcl_interfaces.msg import SetParametersResult
+from rclpy.qos_overriding_options import QoSOverridingOptions
 
 from rosbag2_py import SequentialReader, StorageOptions, ConverterOptions
 from rclpy.serialization import deserialize_message
@@ -61,6 +63,15 @@ class Ping360ImagerNode(Node):
         for param in params:
             self.get_logger().info(f'{param.name}: {param.value}')
 
+        qos_override_opts = QoSOverridingOptions(
+            policy_kinds=(
+                qos.QoSPolicyKind.HISTORY,
+                qos.QoSPolicyKind.DEPTH,
+                qos.QoSPolicyKind.RELIABILITY,
+                )
+        )
+        SENSOR_QOS = rclpy.qos.qos_profile_sensor_data
+
         # Handle parameter updates
         _ = self.add_on_set_parameters_callback(self.set_param_callback)
 
@@ -72,7 +83,8 @@ class Ping360ImagerNode(Node):
         if len(self.video_file) == 0:
             self.to_video = False
             self.publisher = self.create_publisher(Image, self.image_topic,
-                                                   rclpy.qos.qos_profile_sensor_data)
+                                                   SENSOR_QOS,
+                                                   qos_overriding_options=qos_override_opts) 
             self.get_logger().info("Publishing data to ros2 topic")
         else:
             self.video_writer = None
@@ -85,7 +97,8 @@ class Ping360ImagerNode(Node):
             self.subscrber = self.create_subscription(SonarPing360,
                                                       self.data_topic,
                                                       self.data_callback, 
-                                                      rclpy.qos.qos_profile_sensor_data)
+                                                      SENSOR_QOS,
+                                                      qos_overriding_options=qos_override_opts) 
             self.get_logger().info("Reading data from ros2 topic")
         else:
             self.from_bag = True
@@ -182,6 +195,8 @@ class Ping360ImagerNode(Node):
 
     def set_param_callback(self, params):
         for param in params:
+            if "qos" in param.name:
+                continue
             exec(f"self.flag = self.{param.name} != param.value")
             if self.flag:
                 exec(f"self.{param.name} = param.value")
