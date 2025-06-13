@@ -75,9 +75,9 @@ class Ping360Node(Node):
             'baudrate': [115200, int],
             'motor_off': [False, bool],
             'speed_of_sound': [1500, int],
-            'scan_threshold': [100, int],
+            'scan_threshold': [70, int],
             'range': [1.0, float],
-            'offset': [120, int],
+            'offset': [170, int],
             'topic': ['/sonar/ping360/data', str],
             'frame_id': ['ping360', str],
         }
