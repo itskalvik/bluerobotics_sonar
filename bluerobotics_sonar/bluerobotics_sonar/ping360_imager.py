@@ -134,7 +134,7 @@ class Ping360ImagerNode(Node):
                                  (20, 50), cv2.FONT_HERSHEY_SIMPLEX, 1,
                                  (255, 255, 255), 2, cv2.LINE_AA)
         scan_image = cv2.putText(scan_image,
-                                 f'Angle: {(msg.angle*0.9)%360:.0f} deg',
+                                 f'Angle: {(msg.angle*0.9):.0f} deg',
                                  (20, 100), cv2.FONT_HERSHEY_SIMPLEX, 1,
                                  (255, 255, 255), 2, cv2.LINE_AA)
 
