@@ -24,6 +24,14 @@
 # SOFTWARE.
 #-----------------------------------------------------------------------------------
 
+"""
+ROS 2 node for the Blue Robotics Ping360 scanning sonar.
+
+This node connects to a Ping360 device, configures it based on ROS
+parameters, and publishes the sonar data to a topic. It also allows for
+dynamic reconfiguration of the sonar settings.
+"""
+
 from brping import Ping360
 from brping.definitions import PING360_AUTO_DEVICE_DATA
 
@@ -42,6 +50,10 @@ from scipy.ndimage import gaussian_filter1d
 
 
 class Ping360Node(Node):
+    """
+    The main class for the sonar node.
+    """
+
     # Firmware defaults from ping-viewer/src/sensor/ping360.cpp
     _firmwareMaxNumberOfPoints = 1200
     _viewerDefaultNumberOfSamples = _firmwareMaxNumberOfPoints
@@ -60,9 +72,13 @@ class Ping360Node(Node):
     sample_period = _viewerDefaultSamplePeriod
 
     def __init__(self, node_name='ping360'):
+        """
+        Initializes the node, parameters, subscriber, and other necessary objects.
+        """
         super().__init__(node_name)
 
-        # Declare Parameters
+        # --- Parameters ---
+        # Declare and get parameters for the node.
         params = {
             'mode': [1, int],
             'gain_setting': [0, int],
@@ -98,9 +114,11 @@ class Ping360Node(Node):
         )
         SENSOR_QOS = rclpy.qos.qos_profile_sensor_data
 
+        # --- Parameter Handler ---
         # Handle parameter updates
         _ = self.add_on_set_parameters_callback(self.set_param_callback)
 
+        # --- Sonar Device ---
         # Init and configure Ping360 sonar
         self.sonar = Ping360()
         if len(self.device.split('.')) == 4:
@@ -111,6 +129,7 @@ class Ping360Node(Node):
             self.get_logger().info("Failed to initialize Ping360!")
             exit(1)
 
+        # --- Verify Firmware Version ---
         # Verify sonar firmware version is compatible
         device_data = self.sonar.get_device_information()
         if device_data['device_type'] == 2:
@@ -124,6 +143,7 @@ class Ping360Node(Node):
                 )
                 exit(1)
 
+        # --- Configure Sonar ---
         self.set_speed_of_sound(self.speed_of_sound)
         self.set_range(self.range)
         self.sonar.control_auto_transmit(
@@ -138,12 +158,14 @@ class Ping360Node(Node):
             num_steps=self.num_steps,
             delay=self.delay)
 
+        # --- Publisher ---
         # Setup the publisher
         self.publisher = self.create_publisher(SonarPing360, self.topic,
                                                SENSOR_QOS,
                                                qos_overriding_options=qos_override_opts) 
         self.get_logger().info("Node initialized! Publishing sonar data...")
 
+        # --- Main Loop ---
         # Continuously publish sonar data when available
         self.msg = SonarPing360()
         self.msg.header.frame_id = self.frame_id
@@ -180,6 +202,10 @@ class Ping360Node(Node):
             rclpy.shutdown()
 
     def set_param_callback(self, params):
+        """
+        This function is the callback for when parameters are changed.
+        It updates the node's attributes and sends the new settings to the sonar.
+        """
         update = False
         for param in params:
             if "qos" in param.name:
@@ -198,6 +224,7 @@ class Ping360Node(Node):
             else:
                 update = True
 
+        # Apply the new settings to the sonar device
         if update and not self.motor_off:
             # if serial device, reconnect to send a line break
             # and stop auto-transmitting
@@ -219,26 +246,36 @@ class Ping360Node(Node):
         return SetParametersResult(successful=True)
 
     def get_distance(self, data):
+        """
+        Processes the raw sonar data to find the distance to the nearest object.
+        """
+        # Apply a Gaussian filter to smooth the data and reduce noise.
+        # The offset is used to ignore the initial part of the signal which can be noisy.
         data = gaussian_filter1d(data[self.offset:], 5)
+        # Find peaks in the data that are above the defined threshold.
         peaks, _ = find_peaks(data, height=self.scan_threshold)
         if len(peaks) > 0:
+            # Calculate the distance to the first detected peak.
             dist = peaks[0] + self.offset + 1
             dist *= self.range / self.num_points
         else:
+            # If no peaks are found, return the maximum range.
             dist = self.range
         return dist
 
-    '''
+    """
+    --- Helper Functions ---
+
     Helper functions to compute the transmit_duration, sample period, number of points based on the range, and speed of sound
     The calculations are based on the Ping Viewer source code: https://github.com/bluerobotics/ping-viewer 
-    Refer to src/sensor/ping360.cpp
-    Refer to src/sensor/ping360.h
-    '''
+    Refer to src/sensor/ping360.cpp and src/sensor/ping360.h
+    """
 
     def set_speed_of_sound(self, speed_of_sound: int):
-        ''' Set the speed of sound (m/s) used for calculating distance from time-of-flight
+        """
+        Set the speed of sound (m/s) used for calculating distance from time-of-flight
         The default speed of sound is 1500 m/s in water
-        '''
+        """
         if speed_of_sound != self._speed_of_sound:
             desired_range = round(self.get_range())
             self._speed_of_sound = speed_of_sound
@@ -252,17 +289,24 @@ class Ping360Node(Node):
             self.adjust_transmit_duration()
 
     def sample_period_in_seconds(self):
+        """
+        Converts the sample period from ticks to seconds.
+        """
         return self.sample_period * self._samplePeriodTickDuration
 
     def get_range(self):
+        """
+        Calculates the current maximum range of the sonar in meters.
+        """
         range = self.sample_period_in_seconds(
         ) * self.num_points * self._speed_of_sound / 2
         self.range = range
         return range
 
     def set_range(self, new_range: float):
-        '''Compute the transmit_duration, sample period, and number of points based on the range
-        '''
+        """
+        Compute the transmit_duration, sample period, and number of points based on the range
+        """
         if math.isclose(new_range, self.get_range(), rel_tol=self._epsilon):
             return
 
@@ -276,6 +320,9 @@ class Ping360Node(Node):
         self.adjust_transmit_duration()
 
     def adjust_transmit_duration(self):
+        """
+        Automatically adjusts the transmit duration for optimal performance at the current range.
+        """
         if self._autoTransmitDuration:
             auto_duration = round(8000 * self.get_range() /
                                   self._speed_of_sound)
@@ -289,10 +336,16 @@ class Ping360Node(Node):
             self.transmit_duration = self.transmit_duration_max()
 
     def transmit_duration_max(self) -> int:
+        """
+        Calculates the maximum possible transmit duration for the current sample period.
+        """
         return min(self._firmwareMaxTransmitDuration,
                    int(self.sample_period_in_seconds() * 64e6))
 
     def calculate_sample_period(self, distance: float) -> int:
+        """
+        Calculates the required sample period for a given distance.
+        """
         try:
             calculated_sample_period = 2.0 * distance / (
                 self.num_points * self._speed_of_sound *
@@ -319,9 +372,13 @@ class Ping360Node(Node):
 
 
 def main(args=None):
+    """
+    The main function to run the node.
+    """
     rclpy.init(args=args)
     node = Ping360Node()
-
+    node.destroy_node()
+    rclpy.shutdown()
 
 if __name__ == '__main__':
     main()

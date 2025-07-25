@@ -24,6 +24,13 @@
 # SOFTWARE.
 #-----------------------------------------------------------------------------------
 
+"""
+This script is a ROS 2 node that processes raw sonar data from a 'ping360.py' node.
+It subscribes to the sonar's data topic, converts the raw data into a waterfall image,
+and can save the output as a video file or publish it as a new image topic.
+The node can also process data from a ROS 2 bag file.
+"""
+
 import numpy as np
 from bluerobotics_sonar_msgs.msg import SonarPing360
 
@@ -43,11 +50,17 @@ from rosidl_runtime_py.utilities import get_message
 
 
 class Ping360ImagerNode(Node):
-
+    """
+    The main class for the sonar imager node.
+    """
     def __init__(self, node_name='ping360_imager'):
+        """
+        Initializes the node, parameters, subscriber, and other necessary objects.
+        """
         super().__init__(node_name)
 
-        # Declare Parameters
+        # --- Parameters ---
+        # Declare and get parameters for the node.
         params = {
             'data_topic': ['/sonar/ping360/data', str],
             'image_topic': ['/sonar/ping360/image', str],
@@ -79,19 +92,7 @@ class Ping360ImagerNode(Node):
         self.bridge = CvBridge()
         self.scan_image = None
 
-        # Determine if output is a topic or a video
-        if len(self.video_file) == 0:
-            self.to_video = False
-            self.publisher = self.create_publisher(Image, self.image_topic,
-                                                   SENSOR_QOS,
-                                                   qos_overriding_options=qos_override_opts) 
-            self.get_logger().info("Publishing data to ros2 topic")
-        else:
-            self.video_writer = None
-            self.to_video = True
-            self.get_logger().info("Saving data to video file")
-
-        # Determine if input is a topic or a bag
+        # Determine if input is a node or a bag
         if len(self.bag_file) == 0:
             self.from_bag = False
             self.subscrber = self.create_subscription(SonarPing360,
@@ -99,17 +100,39 @@ class Ping360ImagerNode(Node):
                                                       self.data_callback, 
                                                       SENSOR_QOS,
                                                       qos_overriding_options=qos_override_opts) 
-            self.get_logger().info("Reading data from ros2 topic")
+            self.get_logger().info("Reading data from ros2 node")
         else:
             self.from_bag = True
             self.get_logger().info("Reading data from bag file")
+
+        # Determine if output is a topic or a video
+        if len(self.video_file) == 0 and not self.from_bag:
+            self.to_video = False
+            self.publisher = self.create_publisher(Image, self.image_topic,
+                                                   SENSOR_QOS,
+                                                   qos_overriding_options=qos_override_opts) 
+            self.get_logger().info("Publishing data to ros2 topic")
+        else:
+            if len(self.video_file) == 0:
+                self.video_file = 'ping1d_sonar.mp4'
+            self.video_writer = None
+            self.to_video = True
+            self.get_logger().info(f"Saving data to video file: {self.video_file}")
+
+        # --- Bag Processing ---
+        # If a bag file is provided, start the processing
+        if self.from_bag:
             self.process_bag()
 
     def data_callback(self, msg):
+        """
+        Callback function to process incoming sonar data.
+        This function is called for each message received on the data_topic.
+        """ 
+        # Convert the ROS 2 message to an OpenCV image (numpy array).
         if self.scan_image is None:
             self.scan_image = np.zeros((400, len(msg.profile_data)),
                                        dtype=np.uint8)
-
         self.scan_image[msg.angle] = msg.profile_data
         scan_image = cv2.warpPolar(self.scan_image,
                                    dsize=(1500, 1500),
@@ -123,7 +146,10 @@ class Ping360ImagerNode(Node):
             (750 + int(750 * np.cos(np.deg2rad(msg.angle * 0.9))),
              750 + int(750 * np.sin(np.deg2rad(msg.angle * 0.9)))),
             (255, 255, 255), 2)
-        scan_image = cv2.circle(scan_image, (750, 750), 750, (255, 255, 255),
+        scan_image = cv2.circle(scan_image, 
+                                (750, 750), 
+                                750, 
+                                (255, 255, 255),
                                 2)
         scan_image = cv2.flip(scan_image, 0)
         if self.rotation != 0.0:
@@ -139,6 +165,7 @@ class Ping360ImagerNode(Node):
                                  (255, 255, 255), 2, cv2.LINE_AA)
 
         if self.to_video:
+            # Write the processed frame to the video file
             if self.video_writer is None:
                 height, width = scan_image.shape[:2]
                 fourcc = cv2.VideoWriter_fourcc(*'mp4v')
@@ -150,9 +177,20 @@ class Ping360ImagerNode(Node):
                     return
             self.video_writer.write(scan_image)
         else:
+            # If not saving to video, publish the frame as a ROS 2 message
             self.publisher.publish(self.bridge.cv2_to_imgmsg(scan_image))
 
     def process_bag(self):
+        """
+        Processes a ROS 2 bag file to extract and convert sonar images
+        """
+        # Check if the bag file exists.
+        if not os.path.exists(self.bag_file):
+            self.get_logger().error(f"Bag file not found: {self.bag_file}!")
+            exit()
+        self.get_logger().info(f"Processing bag file: {self.bag_file}")
+
+        # --- Setup Bag Reader ---
         storage_options = StorageOptions(uri=self.bag_file,
                                          storage_id='sqlite3')
         converter_options = ConverterOptions(input_serialization_format='cdr',
@@ -160,6 +198,7 @@ class Ping360ImagerNode(Node):
         reader = SequentialReader()
         reader.open(storage_options, converter_options)
 
+        # Get the message type for the specified data topic.
         topic_types = reader.get_all_topics_and_types()
         type_map = {t.name: t.type for t in topic_types}
         msg_type_str = type_map.get(self.data_topic, None)
@@ -169,7 +208,7 @@ class Ping360ImagerNode(Node):
             exit()
         msg_type = get_message(msg_type_str)
 
-        # Estimate FPS
+        # --- First Pass: Get Timestamps to Estimate FPS ---
         times = []
         while reader.has_next():
             (topic, data, t) = reader.read_next()
@@ -177,24 +216,36 @@ class Ping360ImagerNode(Node):
                 msg = deserialize_message(data, msg_type)
                 times.append(t)
         time_del = np.diff(times)
-        self.video_fps = np.round(1.0 / (np.mean(time_del) * 1e-9)).astype(int)
+        self.video_fps = np.round(1.0 / (np.median(time_del) * 1e-9)).astype(int)
         self.get_logger().info(f'Estimated FPS: {self.video_fps}')
+        self.get_logger().info(f'Total Frames: {len(times)}')
 
+        # --- Second Pass: Process Messages ---
         reader = SequentialReader()
         reader.open(storage_options, converter_options)
+        frame_num = 0
         while reader.has_next():
             (topic, data, t) = reader.read_next()
             if topic == self.data_topic:
                 msg = deserialize_message(data, msg_type)
                 self.data_callback(msg)
+                frame_num += 1
+                if frame_num % 50 == 0:
+                    self.get_logger().info(f'Processed Frames: {frame_num}/{len(times)}')
+        self.get_logger().info(f'Finished processing all frames!')
 
-        if self.to_video:
-            self.video_writer.release()
-            self.get_logger().info('Finished writing to video file')
-            exit()
+        # --- Cleanup ---
+        self.video_writer.release()
+        self.get_logger().info(f'Finished writing to video file: {self.video_file}')
+        exit()
 
     def set_param_callback(self, params):
+        """
+        This function is the callback for when parameters are changed.
+        It updates the node's attributes and sends the new settings to the sonar.
+        """
         for param in params:
+            # QoS setting are handled by QoSOverridingOptions
             if "qos" in param.name:
                 continue
             exec(f"self.flag = self.{param.name} != param.value")
@@ -205,9 +256,14 @@ class Ping360ImagerNode(Node):
 
 
 def main(args=None):
+    """
+    The main function to run the node.
+    """
     rclpy.init(args=args)
     node = Ping360ImagerNode()
-    rclpy.spin(node)
+    # If not processing a bag, spin the node to keep it alive.
+    if node.bag_file == '':
+        rclpy.spin(node)
     node.destroy_node()
     rclpy.shutdown()
 

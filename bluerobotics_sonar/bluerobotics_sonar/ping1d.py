@@ -24,6 +24,14 @@
 # SOFTWARE.
 #-----------------------------------------------------------------------------------
 
+"""
+ROS 2 node for the Blue Robotics Ping1D scanning sonar.
+
+This node connects to a Ping1D device, configures it based on ROS
+parameters, and publishes the sonar data to a topic. It also allows for
+dynamic reconfiguration of the sonar settings.
+"""
+
 from brping import Ping1D
 from brping.definitions import PING1D_PROFILE
 from bluerobotics_sonar_msgs.msg import SonarPing1D
@@ -36,11 +44,18 @@ from rclpy.qos_overriding_options import QoSOverridingOptions
 
 
 class Ping1DNode(Node):
+    """
+    The main class for the sonar node.
+    """
 
     def __init__(self, node_name='ping1d'):
+        """
+        Initializes the node, parameters, subscriber, and other necessary objects.
+        """
         super().__init__(node_name)
 
-        # Declare Parameters
+        # --- Parameters ---
+        # Declare and get parameters for the node.
         params = {
             'gain_setting': [0, int],
             'mode_auto': [0, int],
@@ -78,10 +93,12 @@ class Ping1DNode(Node):
             else:
                 self.ping_interval = 33
     
+        # --- Parameter Handler ---
         # Handle parameter updates
         self.param_handler_ptr_ = self.add_on_set_parameters_callback(
             self.set_param_callback)
 
+        # --- Sonar Device ---
         # Init and configure Ping1D sonar
         self.sonar = Ping1D()
         if len(self.device.split('.')) == 4:
@@ -92,6 +109,7 @@ class Ping1DNode(Node):
             self.get_logger().info("Failed to initialize Ping!")
             exit(1)
 
+        # --- Verify Firmware Version ---
         # Verify sonar firmware version is compatible
         device_data = self.sonar.get_device_information()
         if device_data['device_type'] == 1:
@@ -106,6 +124,7 @@ class Ping1DNode(Node):
                         "Ping1D firmware version is not compatible! Update to 3.29 or higher."
                     )
 
+        # --- Configure Sonar ---
         self.sonar.set_gain_setting(self.gain_setting)
         self.sonar.set_mode_auto(self.mode_auto)
         self.sonar.set_ping_enable(self.ping_enable)
@@ -115,12 +134,14 @@ class Ping1DNode(Node):
         self.sonar.set_speed_of_sound(int(self.speed_of_sound * 1000))
         self.sonar.control_continuous_start(PING1D_PROFILE)
 
+        # --- Publisher ---
         # Setup the publisher
         self.publisher = self.create_publisher(SonarPing1D, self.topic,
                                                SENSOR_QOS,
                                                qos_overriding_options=qos_override_opts) 
         self.get_logger().info("Node initialized! Publishing sonar data...")
 
+        # --- Main Loop ---
         # Continuously publish sonar data when available
         self.msg = SonarPing1D()
         self.msg.header.frame_id = self.frame_id
@@ -153,6 +174,10 @@ class Ping1DNode(Node):
             rclpy.shutdown()
 
     def set_param_callback(self, params):
+        """
+        This function is the callback for when parameters are changed.
+        It updates the node's attributes and sends the new settings to the sonar.
+        """
         result = SetParametersResult(successful=True)
         for param in params:
             if "qos" in param.name:
@@ -162,6 +187,7 @@ class Ping1DNode(Node):
                 exec(f"self.{param.name} = param.value")
                 self.get_logger().info(f'Updated {param.name}: {param.value}')
 
+            # Apply the new settings to the sonar device
             if param.name == 'gain_setting':
                 self.sonar.set_gain_setting(self.gain_setting)
             if param.name == 'mode_auto':
@@ -188,8 +214,13 @@ class Ping1DNode(Node):
 
 
 def main(args=None):
+    """
+    The main function to run the node.
+    """
     rclpy.init(args=args)
     node = Ping1DNode()
+    node.destroy_node()
+    rclpy.shutdown()
 
 
 if __name__ == '__main__':
