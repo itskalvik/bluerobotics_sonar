@@ -1,12 +1,12 @@
 
 # Blue Robotics Sonar ROS 2 Package
+This ROS 2 package provides drivers for the Blue Robotics [**Ping 1D**](https://bluerobotics.com/store/sonars/echosounders/ping-sonar-r2-rp/) altimeter and the [**Ping 360**](https://bluerobotics.com/store/sonars/imaging-sonars/ping360-sonar-r1-rp/) scanning sonar. It includes nodes for interfacing with the hardware and visualizing the data.
 
-This ROS2 package provides nodes for interfacing with and visualizing data from Blue Robotics [**Ping1D**](https://bluerobotics.com/store/sonars/echosounders/ping-sonar-r2-rp/) and [**Ping360**](https://bluerobotics.com/store/sonars/imaging-sonars/ping360-sonar-r1-rp/) sonars. It includes four nodes:
+#### Ping 1D Sonar Data
+<img src=".assets/ping1d.gif" alt="Ping1D" width="200"/>
 
-- `ping1d`: Publishes sonar data from the Ping1D device.
-- `ping1d_imager`: Converts Ping1D data into real-time image visualizations.
-- `ping360`: Publishes sonar data from the Ping360 device.
-- `ping360_imager`: Converts Ping360 data into real-time radial image visualizations.
+#### Ping 360 Sonar Data
+<img src=".assets/ping360.gif" alt="Ping360" width="200"/>
 
 ---
 
@@ -25,18 +25,26 @@ This ROS2 package provides nodes for interfacing with and visualizing data from 
 
 ---
 
+## Overview
+This package contains four main nodes:
+- `ping1d`: A driver node that interfaces with the Ping1D sonar. It publishes the full echo profile, including distance and confidence readings.
+- `ping1d_imager`: A processing node that subscribes to the Ping1D data and creates a waterfall image visualization.
+- `ping360`: A driver node for the Ping360 scanning sonar. It publishes the full echo profile for each angle in a 360-degree scan.
+- `ping360_imager`: A processing node that converts the Ping360 data into a polar image for real-time visualization.
+
+---
+
 ## Installation
 
-Install [Blue Robotics ping-python](https://github.com/bluerobotics/ping-python/tree/deployment) package:
+To install the [Blue Robotics Sonar](https://github.com/itskalvik/bluerobotics_sonar) ROS2 package, install [Blue Robotics ping-python](https://github.com/bluerobotics/ping-python/tree/deployment), clone this repository into your ROS 2 workspace, and build it using `colcon`:
+
 ```bash
+# Install ping-python
 git clone --single-branch --branch deployment https://github.com/bluerobotics/ping-python.git
 cd ping-python
 python3 setup.py install --user
-```
 
-Install [Blue Robotics Sonar](https://github.com/itskalvik/bluerobotics_sonar) ROS2 package:
-
-```bash
+# Install bluerobotics_sonar ROS2 package
 cd ~/ros2_ws/src
 git clone https://github.com/itskalvik/bluerobotics_sonar.git
 cd ~/ros2_ws

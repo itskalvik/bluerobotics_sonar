@@ -34,6 +34,7 @@ The node can also process data from a ROS 2 bag file.
 import numpy as np
 from bluerobotics_sonar_msgs.msg import SonarPing360
 
+import os
 import cv2
 from cv_bridge import CvBridge
 from sensor_msgs.msg import Image
@@ -114,7 +115,7 @@ class Ping360ImagerNode(Node):
             self.get_logger().info("Publishing data to ros2 topic")
         else:
             if len(self.video_file) == 0:
-                self.video_file = 'ping1d_sonar.mp4'
+                self.video_file = 'ping360_sonar.mp4'
             self.video_writer = None
             self.to_video = True
             self.get_logger().info(f"Saving data to video file: {self.video_file}")
