@@ -2,9 +2,9 @@
 # Blue Robotics Sonar ROS 2 Package
 This ROS 2 package provides drivers for the Blue Robotics [**Ping 1D**](https://bluerobotics.com/store/sonars/echosounders/ping-sonar-r2-rp/) altimeter and the [**Ping 360**](https://bluerobotics.com/store/sonars/imaging-sonars/ping360-sonar-r1-rp/) scanning sonar. It includes nodes for interfacing with the hardware and visualizing the data.
 
-Ping 1D Sonar Data             |  Ping 360 Sonar Data
+Ping 1D Sonar Data         |  Ping 360 Sonar Data
 :-------------------------:|:-------------------------:
-![](.assets/ping1d.gif)  |  ![](.assets/ping360.gif)
+<img src=".assets/ping1d.gif" alt="Ping1D" width="200"/> | <img src=".assets/ping360.gif" alt="Ping360" width="200"/>
 
 ---
 
