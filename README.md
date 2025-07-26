@@ -1,5 +1,5 @@
-
 # Blue Robotics Sonar ROS 2 Package
+
 This ROS 2 package provides drivers for the Blue Robotics [**Ping 1D**](https://bluerobotics.com/store/sonars/echosounders/ping-sonar-r2-rp/) altimeter and the [**Ping 360**](https://bluerobotics.com/store/sonars/imaging-sonars/ping360-sonar-r1-rp/) scanning sonar. It includes nodes for interfacing with the hardware and visualizing the data.
 
 ## Ping 1D and Ping 360 Sonar Data
@@ -9,12 +9,12 @@ This ROS 2 package provides drivers for the Blue Robotics [**Ping 1D**](https://
 ---
 
 ## Table of Contents
-
+- [Overview](#overview)
 - [Installation](#installation)
 - [Launch Files](#launch-files)
   - [ping1d.launch.py](#ping1dlaunchpy)
   - [ping360.launch.py](#ping360launchpy)
-- [Nodes and Usage](#nodes-and-usage)
+- [Nodes](#nodes)
   - [ping1d](#ping1d)
   - [ping1d_imager](#ping1d_imager)
   - [ping360](#ping360)
@@ -25,16 +25,16 @@ This ROS 2 package provides drivers for the Blue Robotics [**Ping 1D**](https://
 
 ## Overview
 This package contains four main nodes:
-- `ping1d`: A driver node that interfaces with the Ping1D sonar. It publishes the full echo profile, including distance and confidence readings.
-- `ping1d_imager`: A processing node that subscribes to the Ping1D data and creates a waterfall image visualization.
-- `ping360`: A driver node for the Ping360 scanning sonar. It publishes the full echo profile for each angle in a 360-degree scan.
-- `ping360_imager`: A processing node that converts the Ping360 data into a polar image for real-time visualization.
+
+- **`ping1d`** and **`ping360`**: Driver nodes that interface with the sonar hardware. They capture raw sonar data and publish it as a ROS 2 message.
+
+- **`ping1d_imager`** and **`ping360_imager`**: Processing nodes that subscribe to the raw sonar data, convert it into a waterfall image for the Ping 1D and a polar image for the Ping 360. The imagers either publish the image on a new topic or save it to a video file. This node can also process data from a ROS 2 bag file.
 
 ---
 
 ## Installation
 
-To install the [Blue Robotics Sonar](https://github.com/itskalvik/bluerobotics_sonar) ROS2 package, install [Blue Robotics ping-python](https://github.com/bluerobotics/ping-python/tree/deployment), clone this repository into your ROS 2 workspace, and build it using `colcon`:
+To install the [Blue Robotics Sonar](https://github.com/itskalvik/bluerobotics_sonar) ROS2 package, install [Blue Robotics ping-python](https://github.com/bluerobotics/ping-python/tree/deployment) package, clone this repository into your ROS 2 workspace, and build it using `colcon`:
 
 ```bash
 # Install ping-python
@@ -57,7 +57,8 @@ source install/setup.bash
 
 ### `ping1d.launch.py`
 
-Launches the [ping1d](#ping1d) node to publish sonar data.
+Launches the [ping1d](#ping1d) node to publish sonar data. 
+The launch file can also be used to pass/configure all sonar settings.  
 
 **Published Topic**: `/sonar/ping1d/data` (`bluerobotics_sonar_msgs/SonarPing1D`)
 
@@ -67,9 +68,16 @@ Launches the [ping1d](#ping1d) node to publish sonar data.
 ros2 launch bluerobotics_sonar ping1d.launch.py
 ```
 
+Use the following command to upate the maximum range setting:
+
+```bash
+ros2 param set /ping1d scan_length:=<[0.3-100] double value>
+```
+
 ### `ping360.launch.py`
 
 Launches the [ping360](#ping360) node to publish sonar data.
+The launch file can also be used to pass/configure all sonar settings.  
 
 **Published Topics**:  `/sonar/ping360/data` (`bluerobotics_sonar_msgs/Image`)
 
@@ -79,9 +87,15 @@ Launches the [ping360](#ping360) node to publish sonar data.
 ros2 launch bluerobotics_sonar ping360.launch.py
 ```
 
+Use the following command to upate the maximum range setting:
+
+```bash
+ros2 param set /ping360 range:=<[0.75-50] double value>
+```
+
 ---
 
-## Nodes and Usage
+## Nodes
 
 ### `ping1d`
 
@@ -133,8 +147,10 @@ ros2 run bluerobotics_sonar ping1d
 
 **Run Example**:
 ```bash
-ros2 run bluerobotics_sonar ping1d_imager
+ros2 run bluerobotics_sonar ping1d_imager --ros-args -p data_topic:=/sonar/ping1d/data
 ```
+
+Note that when reading from a bag file, the node will export the output to `ping1d_sonar.mp4` video file by default. 
 
 ---
 
@@ -192,8 +208,10 @@ ros2 run bluerobotics_sonar ping360
 
 **Run Example**:
 ```bash
-ros2 run bluerobotics_sonar ping360_imager
+ros2 run bluerobotics_sonar ping360_imager --ros-args -p data_topic:=/sonar/ping360/data
 ```
+
+Note that when reading from a bag file, the node will export the output to `ping360_sonar.mp4` video file by default. 
 
 ---
 
