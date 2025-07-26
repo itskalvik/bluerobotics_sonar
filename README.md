@@ -38,8 +38,9 @@ To install the [Blue Robotics Sonar](https://github.com/itskalvik/bluerobotics_s
 
 ```bash
 # Install ping-python
-git clone --single-branch --branch deployment https://github.com/bluerobotics/ping-python.git
+git clone https://github.com/bluerobotics/ping-python.git -b deployment
 cd ping-python
+git checkout 3d41ddd
 python3 setup.py install --user
 
 # Install bluerobotics_sonar ROS2 package
