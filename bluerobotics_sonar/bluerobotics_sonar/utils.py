@@ -4,7 +4,73 @@ from dataclasses import dataclass
 from typing import Sequence, Optional
 
 import numpy as np
+from collections import deque
 from scipy.signal import find_peaks
+
+
+class SonarStabilityFilter:
+    """
+    Hold-last-value filter for 1D sonar readings.
+
+    The filter appends each new sample into a fixed-size window, computes the
+    sum of the absolute second difference (MASD) as a jitter metric, and:
+      - if the metric is ABOVE `threshold`, returns the previous stable value;
+      - otherwise updates and returns the stable value.
+
+    This is useful for suppressing brief spikes/ringing while letting smooth,
+    consistent changes through.
+
+    Parameters
+    ----------
+    window_size : int, default=15
+        Number of recent samples used to assess stability (>= 3 recommended).
+    threshold : float, default=0.2
+        MASD threshold. Lower = stricter (more holding), higher = looser.
+        Using a mean (not sum) makes this largely independent of window_size.
+    """
+
+    def __init__(
+        self,
+        window_size: int = 15,
+        threshold: float = 0.2,
+    ) -> None:
+        if not isinstance(window_size, int) or window_size < 3:
+            raise ValueError("window_size must be an integer >= 3.")
+        if not np.isfinite(threshold) or threshold < 0:
+            raise ValueError("threshold must be a non-negative finite number.")
+
+        self.window_size = window_size
+        self.threshold = float(threshold)
+        self._buf: deque = deque(np.zeros(3), maxlen=window_size)
+        self._stable: Optional[float] = 0.5
+
+    def _metric(self) -> float:
+        """
+        Sum of the absolute second difference (MASD) over the current buffer.
+        """
+        arr = np.asarray(self._buf)
+        diff2 = np.diff(arr, n=2)
+        return np.sum(np.abs(diff2))
+
+    def __call__(self, x: float) -> float:
+        """
+        Ingest one sample and return the filtered (held/updated) value.
+        """
+        if x < 0:
+            return self._stable
+
+        # Fill buffer
+        self._buf.append(x)
+
+        # Compute stability metric and decide to hold or update
+        metric = self._metric()
+        if metric > self.threshold:
+            # Too jittery → hold
+            return self._stable
+        else:
+            # Stable enough → update
+            self._stable = x
+            return self._stable
 
 
 @dataclass

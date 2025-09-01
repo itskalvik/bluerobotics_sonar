@@ -37,8 +37,8 @@ from brping.definitions import PING360_AUTO_DEVICE_DATA
 
 import math
 import numpy as np
-from utils import SonarRangeFinder
 from bluerobotics_sonar_msgs.msg import SonarPing360
+from utils import SonarRangeFinder, SonarStabilityFilter
 
 import rclpy
 from rclpy import qos
@@ -90,9 +90,11 @@ class Ping360Node(Node):
             'motor_off': [False, bool],
             'speed_of_sound': [1500, int],
             'scan_threshold': [100, int],
+            'filter_threshold': [0.2, float],
             'range': [1.0, float],
             'offset': [20, int],
             'window_size': [5, int],
+            'filter_window_size': [15, int],
             'topic': ['/sonar/ping360/data', str],
             'frame_id': ['ping360', str],
         }
@@ -116,6 +118,8 @@ class Ping360Node(Node):
                                              offset=self.offset,
                                              scan_threshold=self.scan_threshold,
                                              window_size=self.window_size)
+        self.stability_filter = SonarStabilityFilter(window_size=self.filter_window_size,
+                                                     threshold=self.filter_threshold)
 
         # --- Parameter Handler ---
         # Handle parameter updates
@@ -189,9 +193,9 @@ class Ping360Node(Node):
                     self.msg.transmit_frequency = data.transmit_frequency
                     self.msg.range = self.range
                     self.msg.profile_data = data.data
-                    self.msg.distance = self.self.range_finder(
+                    distance = self.self.range_finder(
                         np.frombuffer(data.data, dtype=np.uint8))
-
+                    self.msg.distance = self.stability_filter(distance)
                     self.publisher.publish(self.msg)
 
                     # Allow for params callback to be processed

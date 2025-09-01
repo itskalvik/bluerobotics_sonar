@@ -36,8 +36,8 @@ from brping import Ping1D
 from brping.definitions import PING1D_PROFILE
 
 import numpy as np
-from utils import SonarRangeFinder
 from bluerobotics_sonar_msgs.msg import SonarPing1D
+from utils import SonarRangeFinder, SonarStabilityFilter
 
 import rclpy
 from rclpy import qos
@@ -71,6 +71,8 @@ class Ping1DNode(Node):
             'device': ['/dev/ttyUSB0', int],
             'baudrate': [115200, int],
             'scan_threshold': [100, int],
+            'filter_threshold': [0.2, float],
+            'filter_window_size': [15, int],
             'offset': [20, int],
             'window_size': [5, int],
             'topic': ['/sonar/ping1d/data', str],
@@ -96,7 +98,9 @@ class Ping1DNode(Node):
                                              offset=self.offset,
                                              scan_threshold=self.scan_threshold,
                                              window_size=self.window_size)
-
+        self.stability_filter = SonarStabilityFilter(window_size=self.filter_window_size,
+                                                     threshold=self.filter_threshold)
+        
         if self.ping_interval == -1:
             if self.pings_per_second > 0 and self.pings_per_second <= 50:
                 self.ping_interval = int(1000.0/self.pings_per_second)
@@ -171,9 +175,9 @@ class Ping1DNode(Node):
                     self.msg.scan_length = data.scan_length * 0.001
                     self.msg.gain_setting = data.gain_setting
                     self.msg.profile_data = data.profile_data
-                    self.msg.distance = self.self.range_finder(
-                        np.frombuffer(data.profile_data, dtype=np.uint8))
-                    
+                    distance = self.self.range_finder(
+                        np.frombuffer(data.data, dtype=np.uint8))
+                    self.msg.distance = self.stability_filter(distance)
                     self.publisher.publish(self.msg)
 
                     # Allow for params callback to be processed
