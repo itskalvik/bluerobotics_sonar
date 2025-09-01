@@ -37,6 +37,7 @@ from brping.definitions import PING360_AUTO_DEVICE_DATA
 
 import math
 import numpy as np
+from utils import SonarRangeFinder
 from bluerobotics_sonar_msgs.msg import SonarPing360
 
 import rclpy
@@ -44,9 +45,6 @@ from rclpy import qos
 from rclpy.node import Node
 from rcl_interfaces.msg import SetParametersResult
 from rclpy.qos_overriding_options import QoSOverridingOptions
-
-from scipy.signal import find_peaks
-from scipy.ndimage import gaussian_filter1d
 
 
 class Ping360Node(Node):
@@ -91,9 +89,10 @@ class Ping360Node(Node):
             'baudrate': [115200, int],
             'motor_off': [False, bool],
             'speed_of_sound': [1500, int],
-            'scan_threshold': [70, int],
+            'scan_threshold': [100, int],
             'range': [1.0, float],
-            'offset': [170, int],
+            'offset': [20, int],
+            'window_size': [5, int],
             'topic': ['/sonar/ping360/data', str],
             'frame_id': ['ping360', str],
         }
@@ -113,6 +112,10 @@ class Ping360Node(Node):
                 )
         )
         SENSOR_QOS = rclpy.qos.qos_profile_sensor_data
+        self.range_finder = SonarRangeFinder(max_range=self.range,
+                                             offset=self.offset,
+                                             scan_threshold=self.scan_threshold,
+                                             window_size=self.window_size)
 
         # --- Parameter Handler ---
         # Handle parameter updates
@@ -186,7 +189,7 @@ class Ping360Node(Node):
                     self.msg.transmit_frequency = data.transmit_frequency
                     self.msg.range = self.range
                     self.msg.profile_data = data.data
-                    self.msg.distance = self.get_distance(
+                    self.msg.distance = self.self.range_finder(
                         np.frombuffer(data.data, dtype=np.uint8))
 
                     self.publisher.publish(self.msg)
@@ -244,24 +247,6 @@ class Ping360Node(Node):
                 num_steps=self.num_steps,
                 delay=self.delay)
         return SetParametersResult(successful=True)
-
-    def get_distance(self, data):
-        """
-        Processes the raw sonar data to find the distance to the nearest object.
-        """
-        # Apply a Gaussian filter to smooth the data and reduce noise.
-        # The offset is used to ignore the initial part of the signal which can be noisy.
-        data = gaussian_filter1d(data[self.offset:], 5)
-        # Find peaks in the data that are above the defined threshold.
-        peaks, _ = find_peaks(data, height=self.scan_threshold)
-        if len(peaks) > 0:
-            # Calculate the distance to the first detected peak.
-            dist = peaks[0] + self.offset + 1
-            dist *= self.range / self.num_points
-        else:
-            # If no peaks are found, return the maximum range.
-            dist = self.range
-        return dist
 
     """
     --- Helper Functions ---
