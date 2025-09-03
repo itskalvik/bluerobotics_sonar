@@ -38,7 +38,7 @@ from brping.definitions import PING360_AUTO_DEVICE_DATA
 import math
 import numpy as np
 from bluerobotics_sonar_msgs.msg import SonarPing360
-from utils import SonarRangeFinder, SonarStabilityFilter
+from .utils import SonarRangeFinder, SonarStabilityFilter
 
 import rclpy
 from rclpy import qos
@@ -193,7 +193,7 @@ class Ping360Node(Node):
                     self.msg.transmit_frequency = data.transmit_frequency
                     self.msg.range = self.range
                     self.msg.profile_data = data.data
-                    distance = self.self.range_finder(
+                    distance = self.range_finder(
                         np.frombuffer(data.data, dtype=np.uint8))
                     self.msg.distance = self.stability_filter(distance)
                     self.publisher.publish(self.msg)
