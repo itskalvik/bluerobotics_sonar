@@ -8,6 +8,17 @@ from collections import deque
 from scipy.signal import find_peaks
 
 
+class Ping1DFilter:
+    def __init__(self, threshold):
+        self.threshold = threshold
+
+    def __call__(self, distance, confidence):
+        if confidence < self.threshold:
+            return distance
+        else:
+            return 0.2
+        
+
 class SonarStabilityFilter:
     """
     Hold-last-value filter for 1D sonar readings.
