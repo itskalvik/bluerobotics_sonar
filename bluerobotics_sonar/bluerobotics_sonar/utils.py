@@ -14,9 +14,9 @@ class Ping1DFilter:
 
     def __call__(self, distance, confidence):
         if confidence < self.threshold:
-            return distance
-        else:
             return 0.2
+        else:
+            return distance
         
 
 class SonarStabilityFilter:

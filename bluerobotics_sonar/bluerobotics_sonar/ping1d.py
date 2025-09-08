@@ -34,8 +34,6 @@ dynamic reconfiguration of the sonar settings.
 
 from brping import Ping1D
 from brping.definitions import PING1D_PROFILE
-
-from .utils import Ping1DFilter
 from bluerobotics_sonar_msgs.msg import SonarPing1D
 
 import rclpy
@@ -69,10 +67,6 @@ class Ping1DNode(Node):
             'speed_of_sound': [1500, int],
             'device': ['/dev/ttyUSB0', int],
             'baudrate': [115200, int],
-            'scan_threshold': [100, int],
-            'filter_threshold': [100, int],
-            'offset': [20, int],
-            'window_size': [5, int],
             'topic': ['/sonar/ping1d/data', str],
             'frame_id': ['ping1d', str],
         }
@@ -92,8 +86,7 @@ class Ping1DNode(Node):
                 )
         )
         SENSOR_QOS = rclpy.qos.qos_profile_sensor_data
-        self.filter = Ping1DFilter(threshold=self.filter_threshold)
-        
+
         if self.ping_interval == -1:
             if self.pings_per_second > 0 and self.pings_per_second <= 50:
                 self.ping_interval = int(1000.0/self.pings_per_second)
@@ -161,6 +154,7 @@ class Ping1DNode(Node):
                 data = self.sonar.wait_message([PING1D_PROFILE])
                 if data:
                     self.msg.header.stamp = self.get_clock().now().to_msg()
+                    self.msg.distance = data.distance * 0.001
                     self.msg.confidence = data.confidence
                     self.msg.transmit_duration = data.transmit_duration
                     self.msg.ping_number = data.ping_number
@@ -168,8 +162,7 @@ class Ping1DNode(Node):
                     self.msg.scan_length = data.scan_length * 0.001
                     self.msg.gain_setting = data.gain_setting
                     self.msg.profile_data = data.profile_data
-                    self.msg.distance = self.filter(data.distance * 0.001,
-                                                    data.confidence)
+
                     self.publisher.publish(self.msg)
 
                     # Allow for params callback to be processed
