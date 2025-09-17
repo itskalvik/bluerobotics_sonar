@@ -36,6 +36,10 @@ from brping import Ping1D
 from brping.definitions import PING1D_PROFILE
 from bluerobotics_sonar_msgs.msg import SonarPing1D
 
+import numpy as np
+from time import time
+from collections import deque
+
 import rclpy
 from rclpy import qos
 from rclpy.node import Node
@@ -69,6 +73,7 @@ class Ping1DNode(Node):
             'baudrate': [115200, int],
             'topic': ['/sonar/ping1d/data', str],
             'frame_id': ['ping1d', str],
+            'ref_dist': [0.45, float]
         }
 
         for param, [value, dtype] in params.items():
@@ -146,6 +151,9 @@ class Ping1DNode(Node):
         self.msg = SonarPing1D()
         self.msg.header.frame_id = self.frame_id
 
+        time_last = time()
+        dist_buf = deque(maxlen=15)
+
         try:
             while True:
                 if not self.ping_enable:
@@ -162,8 +170,16 @@ class Ping1DNode(Node):
                     self.msg.scan_length = data.scan_length * 0.001
                     self.msg.gain_setting = data.gain_setting
                     self.msg.profile_data = data.profile_data
-
                     self.publisher.publish(self.msg)
+
+                    dist_buf.append(self.msg.distance)
+                    if time() - time_last >= 1.:
+                        params = self.get_parameters(params.keys())
+                        self.get_logger().info(f'')
+                        for param in params:
+                            self.get_logger().info(f'{param.name}: {param.value}')                    
+                        self.get_logger().info(f'{np.linalg.norm(np.array(dist_buf)-self.ref_dist)}:.4f')
+                    time_last = time()
 
                     # Allow for params callback to be processed
                     rclpy.spin_once(self, timeout_sec=0.01)
