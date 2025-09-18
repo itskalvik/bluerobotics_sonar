@@ -77,8 +77,7 @@ class Ping1DNode(Node):
         for param, [value, dtype] in params.items():
             self.declare_parameter(param, value)
             exec(f"self.{param}:dtype = self.get_parameter(param).value")
-        params = self.get_parameters(params.keys())
-        for param in params:
+        for param in self.get_parameters(params.keys()):
             self.get_logger().info(f'{param.name}: {param.value}')
 
         qos_override_opts = QoSOverridingOptions(
@@ -171,11 +170,10 @@ class Ping1DNode(Node):
 
                     dist_buf.append(self.msg.distance)
                     if len(dist_buf) > 15:
-                        params = self.get_parameters(params.keys())
                         self.get_logger().info(f'')
-                        for param in params:
+                        for param in self.get_parameters(params.keys()):
                             self.get_logger().info(f'{param.name}: {param.value}')                    
-                        self.get_logger().info(f'{np.linalg.norm(np.array(dist_buf)-self.ref_dist)}:.4f')
+                        self.get_logger().info(f'Error: {np.linalg.norm(np.array(dist_buf)-self.ref_dist):.4f}')
                         dist_buf = []
 
                     # Allow for params callback to be processed

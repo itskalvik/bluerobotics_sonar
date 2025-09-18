@@ -29,15 +29,11 @@ from launch import LaunchDescription
 
 
 def generate_launch_description():
-    data_topic = '/sonar/ping1d/data'
-    sonar_range = 1.0  # meters
-
     ping1d_data = Node(package='bluerobotics_sonar',
                        executable='ping1d',
-                       parameters=[{
-                            'topic': data_topic,
-                            'scan_length': sonar_range
-                       }],
+                       parameters=[{'scan_length': 1.0,
+                                    'gain_setting': 1,
+                                    'device': '/dev/ping2'}],
                        output='screen')
 
     return LaunchDescription([ping1d_data])
