@@ -40,10 +40,6 @@ import numpy as np
 from bluerobotics_sonar_msgs.msg import SonarPing360
 from .utils import SonarRangeFinder, SonarStabilityFilter
 
-import numpy as np
-from time import time
-from collections import deque
-
 import rclpy
 from rclpy import qos
 from rclpy.node import Node
@@ -181,8 +177,7 @@ class Ping360Node(Node):
         self.msg = SonarPing360()
         self.msg.header.frame_id = self.frame_id
 
-        time_last = time()
-        dist_buf = deque(maxlen=15)
+        dist_buf = []
 
         try:
             while True:
@@ -206,13 +201,13 @@ class Ping360Node(Node):
                     self.publisher.publish(self.msg)
 
                     dist_buf.append(self.msg.distance)
-                    if time() - time_last >= 1.:
+                    if len(dist_buf) > 15:
                         params = self.get_parameters(params.keys())
                         self.get_logger().info(f'')
                         for param in params:
                             self.get_logger().info(f'{param.name}: {param.value}')                    
                         self.get_logger().info(f'{np.linalg.norm(np.array(dist_buf)-self.ref_dist)}:.4f')
-                    time_last = time()
+                        dist_buf = []
 
                     # Allow for params callback to be processed
                     rclpy.spin_once(self, timeout_sec=0.01)
