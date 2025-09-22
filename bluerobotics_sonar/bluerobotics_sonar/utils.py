@@ -69,7 +69,7 @@ class SonarRangeFinder:
 
     max_range: float = 1.0
     offset: int = 25
-    threshold: float = 50.0
+    threshold: float = 150.0
     window_size: int = 15
     sigma: float = 3.0
 

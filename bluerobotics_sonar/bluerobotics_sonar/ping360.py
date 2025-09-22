@@ -89,7 +89,7 @@ class Ping360Node(Node):
             'baudrate': [115200, int],
             'motor_off': [False, bool],
             'speed_of_sound': [1500, int],
-            'scan_threshold': [50, int],
+            'scan_threshold': [150, int],
             'range': [1.0, float],
             'offset': [20, int],
             'window_size': [15, int],
@@ -174,8 +174,6 @@ class Ping360Node(Node):
         self.msg.header.frame_id = self.frame_id
 
         dist_buf = []
-        dist_ref = 0.45
-
         try:
             while True:
                 if self.motor_off:
@@ -193,10 +191,9 @@ class Ping360Node(Node):
                     self.msg.range = self.range
                     self.msg.profile_data = data.data
                     distance = self.range_finder(
-                        np.frombuffer(data.data, dtype=np.uint8), dist_ref)
+                        np.frombuffer(data.data, dtype=np.uint8))
                     self.msg.distance = self.filter(distance)
                     self.publisher.publish(self.msg)
-                    dist_ref = self.msg.distance
 
                     dist_buf.append(self.msg.distance)
                     if len(dist_buf) > 15:
