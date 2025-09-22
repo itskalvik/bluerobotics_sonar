@@ -38,7 +38,7 @@ from brping.definitions import PING360_AUTO_DEVICE_DATA
 import math
 import numpy as np
 from bluerobotics_sonar_msgs.msg import SonarPing360
-from .utils import SonarRangeFinder, SonarStabilityFilter
+from .utils import SonarRangeFinder, KF
 
 import rclpy
 from rclpy import qos
@@ -89,12 +89,10 @@ class Ping360Node(Node):
             'baudrate': [115200, int],
             'motor_off': [False, bool],
             'speed_of_sound': [1500, int],
-            'scan_threshold': [100, int],
-            'filter_threshold': [0.2, float],
+            'scan_threshold': [50, int],
             'range': [1.0, float],
             'offset': [20, int],
-            'window_size': [5, int],
-            'filter_window_size': [15, int],
+            'window_size': [15, int],
             'topic': ['/sonar/ping360/data', str],
             'frame_id': ['ping360', str],
             'ref_dist': [0.45, float]
@@ -114,12 +112,10 @@ class Ping360Node(Node):
                 )
         )
         SENSOR_QOS = rclpy.qos.qos_profile_sensor_data
-        self.range_finder = SonarRangeFinder(max_range=self.range,
-                                             offset=self.offset,
-                                             scan_threshold=self.scan_threshold,
-                                             window_size=self.window_size)
-        self.stability_filter = SonarStabilityFilter(window_size=self.filter_window_size,
-                                                     threshold=self.filter_threshold)
+        self.range_finder = SonarRangeFinder(offset=self.offset, 
+                                             window_size=self.window_size, 
+                                             threshold=self.scan_threshold)
+        self.filter = KF(noise=5.0)
 
         # --- Parameter Handler ---
         # Handle parameter updates
@@ -197,7 +193,7 @@ class Ping360Node(Node):
                     self.msg.profile_data = data.data
                     distance = self.range_finder(
                         np.frombuffer(data.data, dtype=np.uint8))
-                    self.msg.distance = self.stability_filter(distance)
+                    self.msg.distance = self.filter(distance)
                     self.publisher.publish(self.msg)
 
                     dist_buf.append(self.msg.distance)
@@ -240,6 +236,13 @@ class Ping360Node(Node):
                 self.sonar.control_motor_off()
             else:
                 update = True
+
+            if param.name == "offset" or \
+               param.name == "window_size" or \
+               param.name == "scan_threshold":
+                self.range_finder = SonarRangeFinder(offset=self.offset, 
+                                                     window_size=self.window_size, 
+                                                     threshold=self.scan_threshold)
 
         # Apply the new settings to the sonar device
         if update and not self.motor_off:
