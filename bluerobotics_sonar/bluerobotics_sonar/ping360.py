@@ -174,6 +174,7 @@ class Ping360Node(Node):
         self.msg.header.frame_id = self.frame_id
 
         dist_buf = []
+        dist_ref = 0.45
 
         try:
             while True:
@@ -192,9 +193,10 @@ class Ping360Node(Node):
                     self.msg.range = self.range
                     self.msg.profile_data = data.data
                     distance = self.range_finder(
-                        np.frombuffer(data.data, dtype=np.uint8))
+                        np.frombuffer(data.data, dtype=np.uint8), dist_ref)
                     self.msg.distance = self.filter(distance)
                     self.publisher.publish(self.msg)
+                    dist_ref = self.msg.distance
 
                     dist_buf.append(self.msg.distance)
                     if len(dist_buf) > 15:
