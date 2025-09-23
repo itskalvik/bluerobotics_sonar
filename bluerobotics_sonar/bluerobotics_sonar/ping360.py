@@ -192,7 +192,10 @@ class Ping360Node(Node):
                     self.msg.profile_data = data.data
                     distance = self.range_finder(
                         np.frombuffer(data.data, dtype=np.uint8))
-                    self.msg.distance = self.filter(distance)
+                    if distance < 0:
+                        self.msg.distance = -1.
+                    else:
+                        self.msg.distance = self.filter(distance)
                     self.publisher.publish(self.msg)
 
                     dist_buf.append(self.msg.distance)
