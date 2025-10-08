@@ -95,7 +95,6 @@ class Ping360Node(Node):
             'window_size': [15, int],
             'topic': ['/sonar/ping360/data', str],
             'frame_id': ['ping360', str],
-            'ref_dist': [0.45, float]
         }
 
         for param, [value, dtype] in params.items():
@@ -173,7 +172,6 @@ class Ping360Node(Node):
         self.msg = SonarPing360()
         self.msg.header.frame_id = self.frame_id
 
-        dist_buf = []
         try:
             while True:
                 if self.motor_off:
@@ -197,14 +195,6 @@ class Ping360Node(Node):
                     else:
                         self.msg.distance = self.filter(distance)
                     self.publisher.publish(self.msg)
-
-                    dist_buf.append(self.msg.distance)
-                    if len(dist_buf) > 15:
-                        self.get_logger().info(f'')
-                        for param in self.get_parameters(params.keys()):
-                            self.get_logger().info(f'{param.name}: {param.value}')                    
-                        self.get_logger().info(f'Error: {np.linalg.norm(np.array(dist_buf)-self.ref_dist):.4f}')
-                        dist_buf = []
 
                     # Allow for params callback to be processed
                     rclpy.spin_once(self, timeout_sec=0.01)
