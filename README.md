@@ -1,8 +1,7 @@
 # Blue Robotics Sonar ROS 2 Package
 
-This ROS 2 package provides drivers for the Blue Robotics [**Ping 1D**](https://bluerobotics.com/store/sonars/echosounders/ping-sonar-r2-rp/) altimeter and the [**Ping 360**](https://bluerobotics.com/store/sonars/imaging-sonars/ping360-sonar-r1-rp/) scanning sonar. It includes nodes for interfacing with the hardware and visualizing the data.
+This ROS 2 package provides drivers for the Blue Robotics **Ping1D** altimeter and **Ping360** scanning sonar. It includes nodes for interfacing with the hardware and visualizing the data.
 
-## Ping 1D and Ping 360 Sonar Data
 <p align="center">
 <img src=".assets/ping1d.gif" alt="Ping1D" width="49%"/> <img src=".assets/ping360.gif" alt="Ping360" width="49%"/>
 </p>
@@ -11,7 +10,7 @@ This ROS 2 package provides drivers for the Blue Robotics [**Ping 1D**](https://
 
 ## Table of Contents
 - [Overview](#overview)
-- [Installation](#installation)
+- [Requirements & Installation](#requirements--installation)
 - [Launch Files](#launch-files)
   - [ping1d.launch.py](#ping1dlaunchpy)
   - [ping360.launch.py](#ping360launchpy)
@@ -20,31 +19,31 @@ This ROS 2 package provides drivers for the Blue Robotics [**Ping 1D**](https://
   - [ping1d_imager](#ping1d_imager)
   - [ping360](#ping360)
   - [ping360_imager](#ping360_imager)
+- [Notes & Tips](#notes--tips)
 - [License](#license)
 
 ---
 
 ## Overview
+
 This package contains four main nodes:
 
-- **`ping1d`** and **`ping360`**: Driver nodes that interface with the sonar hardware. They capture raw sonar data and publish it as a ROS 2 message.
-
-- **`ping1d_imager`** and **`ping360_imager`**: Processing nodes that subscribe to the raw sonar data, convert it into a waterfall image for the Ping 1D and a polar image for the Ping 360. The imagers either publish the image on a new topic or save it to a video file. This node can also process data from a ROS 2 bag file.
+- **`ping1d`** and **`ping360`** — Driver nodes that interface with the hardware and publish raw sonar data as ROS 2 messages.
+- **`ping1d_imager`** and **`ping360_imager`** — Processing nodes that subscribe to the raw sonar messages and render them to images. Each imager can either publish live images on a topic or export a video when consuming a ROS 2 bag file.
 
 ---
 
-## Installation
+## Requirements & Installation
 
-To install the [Blue Robotics Sonar](https://github.com/itskalvik/bluerobotics_sonar) ROS2 package, install [Blue Robotics ping-python](https://github.com/bluerobotics/ping-python/tree/deployment) package, clone this repository into your ROS 2 workspace, and build it using `colcon`:
+Install the [Blue Robotics `ping-python`] library first, then clone and build this package with `colcon`.
 
 ```bash
-# Install ping-python
+# Install ping-python (tested with 'deployment' branch)
 git clone https://github.com/bluerobotics/ping-python.git -b deployment
 cd ping-python
-git checkout 3d41ddd
 python3 setup.py install --user
 
-# Install bluerobotics_sonar ROS2 package
+# Install bluerobotics_sonar ROS 2 package
 cd ~/ros2_ws/src
 git clone https://github.com/itskalvik/bluerobotics_sonar.git
 cd ~/ros2_ws
@@ -53,14 +52,15 @@ colcon build
 source install/setup.bash
 ```
 
+> If building in an environment without `rosdep`, install missing dependencies manually (OpenCV, `cv_bridge`, `rosbag2_py`, etc.).
+
 ---
 
 ## Launch Files
 
 ### `ping1d.launch.py`
 
-Launches the [ping1d](#ping1d) node to publish sonar data. 
-The launch file can also be used to pass/configure all sonar settings.  
+Launches the [`ping1d`](#ping1d) node to publish sonar data. You can also pass parameters here.
 
 **Published Topic**: `/sonar/ping1d/data` (`bluerobotics_sonar_msgs/SonarPing1D`)
 
@@ -70,18 +70,19 @@ The launch file can also be used to pass/configure all sonar settings.
 ros2 launch bluerobotics_sonar ping1d.launch.py
 ```
 
-Use the following command to upate the maximum range setting:
+Adjust maximum range while running:
 
 ```bash
-ros2 param set /ping1d scan_length:=<[0.3-100] double value>
+ros2 param set /ping1d scan_length 10.0
 ```
+
+---
 
 ### `ping360.launch.py`
 
-Launches the [ping360](#ping360) node to publish sonar data.
-The launch file can also be used to pass/configure all sonar settings.  
+Launches the [`ping360`](#ping360) node to publish sonar data. You can also pass parameters here.
 
-**Published Topics**:  `/sonar/ping360/data` (`bluerobotics_sonar_msgs/Image`)
+**Published Topic**: `/sonar/ping360/data` (`bluerobotics_sonar_msgs/SonarPing360`)
 
 **Run Example**:
 
@@ -89,10 +90,10 @@ The launch file can also be used to pass/configure all sonar settings.
 ros2 launch bluerobotics_sonar ping360.launch.py
 ```
 
-Use the following command to upate the maximum range setting:
+Change the maximum range while running:
 
 ```bash
-ros2 param set /ping360 range:=<[0.75-50] double value>
+ros2 param set /ping360 range 10.0
 ```
 
 ---
@@ -101,28 +102,29 @@ ros2 param set /ping360 range:=<[0.75-50] double value>
 
 ### `ping1d`
 
-**Description**: Publishes sonar profiles from the Blue Robotics Ping1D.
+**Description**: Publishes sonar profiles from a Blue Robotics Ping1D.
 
 **Published Topic**: `/sonar/ping1d/data` (`bluerobotics_sonar_msgs/SonarPing1D`)
 
-**Parameters**: The parameters can be updated while running the node.
+**Runtime-Configurable Parameters**
 
-| Name             | Type   | Default         | Description                                  |
-|------------------|--------|-----------------|----------------------------------------------|
-| `device`         | string | `/dev/ttyUSB0`  | Serial port or UDP IP address                |
-| `baudrate`       | int    | `115200`        | Baudrate for serial connection               |
-| `gain_setting`   | int    | `0`             | Gain level [0–6]                             |
-| `mode_auto`      | int    | `0`             | Manual (0) or auto (1) mode                  |
-| `ping_enable`    | bool   | `true`          | Whether sonar is enabled                     |
-| `pings_per_second`| int   | `30`            | Pings per second [1-50]; will be overridden by explicitly setting `ping_interval` |
-| `ping_interval`  | int    | `-1`            | Interval between pings (ms); ignored by default |
-| `scan_start`     | float  | `0.0`           | Minimum range (m) [0-99]                     |
-| `scan_length`    | float  | `1.0`           | Maximum range (m) [0.3-100]                  |
-| `speed_of_sound` | int    | `1500`          | Speed of sound in water (m/s)                |
-| `topic`          | string | `/sonar/ping1d/data` | Output topic                            |
-| `frame_id`       | string | `ping1d`        | TF frame ID                                  |
+| Name | Type | Default | Description |
+|---|---:|:---:|---|
+| `device` | string | `/dev/ttyUSB0` | Serial device path **or** IPv4 address for UDP. If an IPv4 address is provided, the node connects via UDP. |
+| `baudrate` | int | `115200` | Serial baudrate. When `device` is an IPv4 address, this value is used as the UDP **port**. |
+| `gain_setting` | int | `0` | Receiver gain level \[0–6\]. |
+| `mode_auto` | int | `0` | 0 = manual; 1 = auto mode. |
+| `ping_enable` | bool | `true` | Enable/disable pinging (publishing pauses when disabled). |
+| `pings_per_second` | int | `30` | Desired ping rate \[1–50\]. When set, it computes `ping_interval = round(1000 / pings_per_second)`. |
+| `ping_interval` | int | `-1` | Interval between pings in **ms**. `-1` means: derive from `pings_per_second`. |
+| `scan_start` | double | `0.0` | Minimum range in **meters**. |
+| `scan_length` | double | `1.0` | Maximum range in **meters** (typical limits ~0.3–100 m depending on conditions). |
+| `speed_of_sound` | int | `1500` | Speed of sound in **m/s** used for distance conversions. |
+| `topic` | string | `/sonar/ping1d/data` | Output topic for sonar profiles. |
+| `frame_id` | string | `ping1d` | Frame ID set in message headers. |
 
-**Run Example**:
+**Run Example**
+
 ```bash
 ros2 run bluerobotics_sonar ping1d
 ```
@@ -131,59 +133,60 @@ ros2 run bluerobotics_sonar ping1d
 
 ### `ping1d_imager`
 
-**Description**: Subscribes to Ping1D data and publishes a waterfall scan image.
+**Description**: Subscribes to Ping1D data and publishes a scrolling “waterfall” image, or exports a video when reading from a ROS 2 bag file.
 
 **Published Topic**: `/sonar/ping1d/image` (`sensor_msgs/Image`)
 
 **Subscribed Topics**: `/sonar/ping1d/data`
 
-**Parameters**: The parameters can be updated while running the node.
+**Runtime-Configurable Parameters**
 
-| Name           | Type   | Default               | Description                          |
-|----------------|--------|-----------------------|--------------------------------------|
-| `data_topic`   | string | `/sonar/ping1d/data`  | Input sonar data topic               |
-| `image_topic`  | string | `/sonar/ping1d/image` | Output image topic                   |
-| `image_length` | int    | `200`                 | Width (in samples) of scroll image   |
-| `bag_file`     | str    |                       | Optional path to an input ros2 bag file with sonar data |
-| `video_file`   | str    |                       | Optional path to an output mp4 video file |
+| Name | Type | Default | Description |
+|---|---:|:---:|---|
+| `data_topic` | string | `/sonar/ping1d/data` | Input sonar data topic. |
+| `image_topic` | string | `/sonar/ping1d/image` | Output image topic (used when not exporting video). |
+| `image_length` | int | `200` | Width (number of columns) of the scrolling waterfall image. |
+| `bag_file` | string | *(empty)* | If provided, the node reads sonar messages from this ROS 2 bag. |
+| `video_file` | string | *(empty)* | If set (or when `bag_file` is provided), write an MP4 video to this path. Default is `ping1d_sonar.mp4` when reading from a bag. |
 
-**Run Example**:
+**Run Example**
+
 ```bash
 ros2 run bluerobotics_sonar ping1d_imager --ros-args -p data_topic:=/sonar/ping1d/data
 ```
-
-Note that when reading from a bag file, the node will export the output to `ping1d_sonar.mp4` video file by default. 
 
 ---
 
 ### `ping360`
 
-**Description**: Publishes sonar profiles from the Blue Robotics Ping360.
+**Description**: Publishes sonar profiles from a Blue Robotics Ping360. Internally, range-related parameters are auto-tuned for sane operation while scanning.
 
 **Published Topic**: `/sonar/ping360/data` (`bluerobotics_sonar_msgs/SonarPing360`)
 
-**Parameters**: The parameters can be updated while running the node.
+**Runtime-Configurable Parameters**
 
-| Name              | Type   | Default            | Description                                  |
-|-------------------|--------|--------------------|----------------------------------------------|
-| `device`          | string | `/dev/ttyUSB0`     | Serial port or UDP IP address                |
-| `baudrate`        | int    | `115200`           | Baudrate                                     |
-| `mode`            | int    | `1`                | Scan mode (always 1)                         |
-| `gain_setting`    | int    | `0`                | Gain level [0–6]                             |
-| `transmit_frequency` | int | `750`              | Transmit frequency (kHz)                     |
-| `start_angle`     | int    | `0`                | Starting angle (Grads)                       |
-| `stop_angle`      | int    | `399`              | Stopping angle (Grads)                       |
-| `num_steps`       | int    | `1`                | Step size between angles                     |
-| `delay`           | int    | `0`                | An additional delay between successive transmit pulses [0-100 ms] |
-| `range`           | float  | `1.0`              | Scan range in meters [0.75-50]               |
-| `motor_off`       | bool   | `false`            | If true, stops sonar                         |
-| `scan_threshold`  | int    | `100`              | Threshold for peak detection                 |
-| `offset`          | int    | `120`              | Number of samples to ignore in each sonar profile before peak detection |
-| `speed_of_sound`  | int    | `1500`             | Speed of sound in water (m/s)                |
-| `topic`           | string | `/sonar/ping360/data` | Output topic                              |
-| `frame_id`        | string | `ping360`          | TF frame ID                                  |
+| Name | Type | Default | Description |
+|---|---:|:---:|---|
+| `device` | string | `/dev/ttyUSB0` | Serial device path **or** IPv4 address for UDP. If an IPv4 address is provided, the node connects via UDP. |
+| `baudrate` | int | `115200` | Serial baudrate. When `device` is an IPv4 address, this value is used as the UDP **port**. |
+| `mode` | int | `1` | Scanning mode for auto-transmit (fixed to 1 by firmware). |
+| `gain_setting` | int | `0` | Receiver gain level \[0–6\]. |
+| `transmit_frequency` | int | `750` | Transmit frequency in **kHz**. |
+| `start_angle` | int | `0` | Start angle in **grads** \[0–399\]; 400 grads = 360°. |
+| `stop_angle` | int | `399` | Stop angle in **grads** \[0–399\]. |
+| `num_steps` | int | `1` | Step size between successive angles (in grads). |
+| `delay` | int | `0` | Extra inter-ping delay in **ms** (0–100). |
+| `range` | double | `1.0` | Scan range in **meters** (typical limits ~0.75–50 m). |
+| `motor_off` | bool | `false` | If `true`, stop the motor/scan. |
+| `speed_of_sound` | int | `1500` | Speed of sound in **m/s** used for range/time-of-flight calculations. |
+| `scan_threshold` | int | `150` | Peak detection threshold for estimating distance to nearest return. |
+| `offset` | int | `20` | Number of initial bins to ignore per profile (ring-down/near-field). |
+| `window_size` | int | `15` | Window used by the edge/peak detector for distance estimation. |
+| `topic` | string | `/sonar/ping360/data` | Output topic for sonar profiles. |
+| `frame_id` | string | `ping360` | Frame ID set in message headers. |
 
-**Run Example**:
+**Run Example**
+
 ```bash
 ros2 run bluerobotics_sonar ping360
 ```
@@ -192,31 +195,40 @@ ros2 run bluerobotics_sonar ping360
 
 ### `ping360_imager`
 
-**Description**: Converts Ping360 sonar data into a polar image and publishes it.
+**Description**: Converts Ping360 sonar profiles into a polar image. Can publish live images or export a video when reading from a ROS 2 bag file. Use `rotation` to compensate for the physical mounting orientation.
 
 **Published Topic**: `/sonar/ping360/image` (`sensor_msgs/Image`)
 
 **Subscribed Topics**: `/sonar/ping360/data`
 
-**Parameters**: The parameters can be updated while running the node.
+**Runtime-Configurable Parameters**
 
-| Name         | Type   | Default              | Description                                 |
-|--------------|--------|----------------------|---------------------------------------------|
-| `data_topic` | string | `/sonar/ping360/data` | Input sonar data topic                     |
-| `image_topic`| string | `/sonar/ping360/image`| Output image topic                         |
-| `rotation`   | float  | `0.0`                 | Optional image rotation to match sonar mount |
-| `bag_file`   | str    |                       | Optional path to an input ros2 bag file with sonar data |
-| `video_file` | str    |                       | Optional path to an output mp4 video file |
+| Name | Type | Default | Description |
+|---|---:|:---:|---|
+| `data_topic` | string | `/sonar/ping360/data` | Input sonar data topic. |
+| `image_topic` | string | `/sonar/ping360/image` | Output image topic (used when not exporting video). |
+| `rotation` | double | `0.0` | Optional image rotation (±90° increments) to match mounting. |
+| `bag_file` | string | *(empty)* | If provided, the node reads sonar messages from this ROS 2 bag. |
+| `video_file` | string | *(empty)* | If set (or when `bag_file` is provided), write an MP4 video to this path. Default is `ping360_sonar.mp4` when reading from a bag. |
 
-**Run Example**:
+**Run Example**
+
 ```bash
 ros2 run bluerobotics_sonar ping360_imager --ros-args -p data_topic:=/sonar/ping360/data
 ```
 
-Note that when reading from a bag file, the node will export the output to `ping360_sonar.mp4` video file by default. 
+---
+
+## Notes & Tips
+
+- **Serial vs. UDP**: If `device` looks like an IPv4 address (e.g., `192.168.2.2`), the node opens a UDP connection; otherwise it opens a serial connection. In UDP mode the `baudrate` parameter is interpreted as the **port**.
+- **Ping1D rate control**: Prefer setting `pings_per_second`; the node computes `ping_interval` automatically and bounds rates to a safe 1–50 Hz.
+- **Angles in grads (Ping360)**: The hardware reports/accepts angles in grads (0–399), where **1 grad = 0.9°**. The imagers convert this for display overlays.
+- **Distance estimation (Ping360)**: The driver includes a simple edge/peak-based range estimator with a 1D filter for smoothing. Tune `offset`, `window_size`, and `scan_threshold` for your environment.
+- **QoS**: All publishers/subscribers use the ROS 2 Sensor Data QoS and allow QoS overrides via the standard mechanisms.
 
 ---
 
 ## License
 
-This package is licensed under the MIT License. See the top of each file or [LICENSE](LICENSE) for details.
+MIT License. See the top of each file or [LICENSE](LICENSE) for details.
