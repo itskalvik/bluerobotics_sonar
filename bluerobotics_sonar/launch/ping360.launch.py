@@ -31,13 +31,30 @@ from launch import LaunchDescription
 def generate_launch_description():
     ping360_data = Node(package='bluerobotics_sonar',
                         executable='ping360',
-                        parameters=[{'range': 1.0,
-                                      'start_angle': 0,
-                                      'stop_angle': 0,
-                                      'cutoff': 100,
-                                      'scan_threshold': 100,
-                                      'gain_setting': 1,
-                                      'device': '/dev/ping360'}],
+                        parameters=[{
+    # Device connection
+    'device': '/dev/ttyUSB0',    # serial path or IPv4 for UDP
+    'baudrate': 115200,          # serial baud; acts as UDP port if device is IPv4
+
+    # Sonar scanning / firmware-tuned settings
+    'mode': 1,
+    'gain_setting': 0,
+    'transmit_frequency': 750,   # kHz
+    'start_angle': 0,            # grads (0-399)
+    'stop_angle': 399,           # grads (0-399)
+    'num_steps': 1,              # grads per step
+    'delay': 0,                  # ms between pings
+    'motor_off': False,
+    'speed_of_sound': 1500,      # m/s
+    'scan_threshold': 150,
+    'range': 1.0,                # meters
+    'offset': 20,                # bins ignored near transducer
+    'window_size': 15,           # peak/edge window for range finder
+
+    # ROS topics
+    'topic': '/sonar/ping360/data',
+    'frame_id': 'ping360',
+}],
                         output='screen')
 
     return LaunchDescription([ping360_data])

@@ -31,9 +31,25 @@ from launch import LaunchDescription
 def generate_launch_description():
     ping1d_data = Node(package='bluerobotics_sonar',
                        executable='ping1d',
-                       parameters=[{'scan_length': 1.0,
-                                    'gain_setting': 1,
-                                    'device': '/dev/ping2'}],
+                       parameters=[{
+    # Device connection
+    'device': '/dev/ttyUSB0',    # serial path or IPv4 for UDP
+    'baudrate': 115200,          # serial baud; acts as UDP port if device is IPv4
+
+    # Sonar configuration
+    'gain_setting': 0,
+    'mode_auto': 0,              # 0=manual, 1=auto
+    'ping_enable': True,
+    'pings_per_second': 30,      # preferred way to set rate (1-50)
+    'ping_interval': -1,         # -1 -> derive from pings_per_second
+    'scan_start': 0.0,           # meters
+    'scan_length': 1.0,          # meters
+    'speed_of_sound': 1500,      # m/s
+
+    # ROS topics
+    'topic': '/sonar/ping1d/data',
+    'frame_id': 'ping1d',
+}],
                        output='screen')
 
     return LaunchDescription([ping1d_data])
