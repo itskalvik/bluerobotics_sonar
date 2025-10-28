@@ -11,6 +11,7 @@ This ROS 2 package provides drivers for the Blue Robotics **Ping1D** altimeter 
 ## Table of Contents
 - [Overview](#overview)
 - [Requirements & Installation](#requirements--installation)
+- [Quickstart: Live, Bag, and Video](#quickstart-live-bag-and-video)
 - [Launch Files](#launch-files)
   - [ping1d.launch.py](#ping1dlaunchpy)
   - [ping360.launch.py](#ping360launchpy)
@@ -53,6 +54,42 @@ source install/setup.bash
 ```
 
 > If building in an environment without `rosdep`, install missing dependencies manually (OpenCV, `cv_bridge`, `rosbag2_py`, etc.).
+
+---
+
+## Quickstart: Live, Bag, and Video
+
+### Live streaming from hardware
+
+```bash
+# Ping1D
+ros2 launch bluerobotics_sonar ping1d.launch.py
+
+# Ping360
+ros2 launch bluerobotics_sonar ping360.launch.py
+```
+
+### Record to a ROS 2 bag
+
+```bash
+# Ping1D data
+ros2 bag record /sonar/ping1d/data -o ping1d_bag
+
+# Ping360 data
+ros2 bag record /sonar/ping360/data-o ping360_bag
+```
+
+### Play a bag and export video
+
+```bash
+# Ping1D: read bag and write MP4 (set output path via -p video_file:=...)
+ros2 run bluerobotics_sonar ping1d_imager --ros-args \  -p bag_file:=ping1d_bag \  -p video_file:=ping1d_sonar.mp4
+
+# Ping360: rotate image if needed and export MP4
+ros2 run bluerobotics_sonar ping360_imager --ros-args \  -p bag_file:=ping360_bag \  -p rotation:=0.0 \  -p video_file:=ping360_sonar.mp4
+```
+
+> Tip: If you’re publishing live images and don’t want a video file, leave `bag_file` and `video_file` empty.
 
 ---
 
